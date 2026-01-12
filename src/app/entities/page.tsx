@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { entities } from '@/data/entities';
+import { entities, classifyEdgeType } from '@/data/entities';
 import { EntityType } from '@/types';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, ExternalLink } from 'lucide-react';
+import { EDGE_COLORS, EDGE_LABELS } from '@/lib/data';
+import EntityDetailModal from '@/components/EntityDetailModal';
 
 const typeColors: Record<EntityType, string> = {
   person: '#22c55e',
@@ -27,6 +29,7 @@ export default function EntitiesPage() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<EntityType | 'all'>('all');
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
+  const [modalEntity, setModalEntity] = useState<string | null>(null);
 
   const filteredEntities = entities.filter(e => {
     const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -36,6 +39,7 @@ export default function EntitiesPage() {
   });
 
   const selectedEntityData = selectedEntity ? entities.find(e => e.id === selectedEntity) : null;
+  const modalEntityData = modalEntity ? entities.find(e => e.id === modalEntity) : null;
 
   return (
     <div className="h-screen flex">
@@ -124,14 +128,23 @@ export default function EntitiesPage() {
         {selectedEntityData ? (
           <div className="p-8 max-w-3xl">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <span
-                className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: typeColors[selectedEntityData.type] }}
-              />
-              <span className="text-sm text-[var(--text-muted)] uppercase">
-                {typeLabels[selectedEntityData.type]}
-              </span>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <span
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: typeColors[selectedEntityData.type] }}
+                />
+                <span className="text-sm text-[var(--text-muted)] uppercase">
+                  {typeLabels[selectedEntityData.type]}
+                </span>
+              </div>
+              <button
+                onClick={() => setModalEntity(selectedEntity)}
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg text-sm hover:bg-[var(--accent)]/90 transition-colors"
+              >
+                <ExternalLink size={16} />
+                Full Details
+              </button>
             </div>
 
             <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-4">
@@ -151,6 +164,7 @@ export default function EntitiesPage() {
               <div className="space-y-2">
                 {selectedEntityData.connections.map((conn, i) => {
                   const connectedEntity = entities.find(e => e.id === conn.targetId);
+                  const edgeType = classifyEdgeType(conn.relationship);
                   return (
                     <div
                       key={i}
@@ -160,12 +174,23 @@ export default function EntitiesPage() {
                       <div className="flex items-center gap-3">
                         <span
                           className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: connectedEntity ? typeColors[connectedEntity.type] : '#666' }}
+                          style={{ backgroundColor: EDGE_COLORS[edgeType] }}
                         />
                         <div>
-                          <p className="text-sm font-medium text-[var(--text-primary)]">
-                            {conn.targetName}
-                          </p>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="text-sm font-medium text-[var(--text-primary)]">
+                              {conn.targetName}
+                            </p>
+                            <span
+                              className="text-xs px-2 py-0.5 rounded-full"
+                              style={{
+                                backgroundColor: `${EDGE_COLORS[edgeType]}20`,
+                                color: EDGE_COLORS[edgeType],
+                              }}
+                            >
+                              {EDGE_LABELS[edgeType]}
+                            </span>
+                          </div>
                           <p className="text-xs text-[var(--text-muted)]">
                             {conn.relationship}
                           </p>
@@ -184,6 +209,18 @@ export default function EntitiesPage() {
           </div>
         )}
       </div>
+
+      {/* Entity Detail Modal */}
+      {modalEntityData && (
+        <EntityDetailModal
+          entity={modalEntityData}
+          onClose={() => setModalEntity(null)}
+          onNavigateToEntity={(entityId) => {
+            setSelectedEntity(entityId);
+            setModalEntity(entityId);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -14,8 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Stablecoin Network Explorer",
-  description: "Explore the network of actors, organizations, and systems behind stablecoins and dollar hegemony.",
+  title: "Centralization Observatory | Bitcoin + Stablecoins",
+  description: "Track the centralization of crypto. Explore the network of ETFs, custodians, stablecoins, and the institutions capturing Bitcoin and digital dollars.",
+  keywords: ["bitcoin", "stablecoin", "centralization", "ETF", "custody", "USDT", "USDC", "BlackRock", "Coinbase"],
+  openGraph: {
+    title: "Centralization Observatory",
+    description: "Track crypto centralization: Bitcoin ETFs, stablecoin custody, and institutional capture.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

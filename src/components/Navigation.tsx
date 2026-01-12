@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Network, Users, Clock, Newspaper, Search } from 'lucide-react';
+import { LayoutDashboard, Network, Users, Clock, Newspaper, Search, BarChart3, Info } from 'lucide-react';
+import { EDGE_COLORS, EDGE_LABELS, ALL_EDGE_TYPES } from '@/lib/data';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -10,6 +11,8 @@ const navItems = [
   { href: '/entities', label: 'People & Entities', icon: Users },
   { href: '/timeline', label: 'Timeline', icon: Clock },
   { href: '/news', label: 'News Feed', icon: Newspaper },
+  { href: '/metrics', label: 'Metrics', icon: BarChart3 },
+  { href: '/about', label: 'About', icon: Info },
 ];
 
 export default function Navigation() {
@@ -19,10 +22,11 @@ export default function Navigation() {
     <nav className="fixed left-0 top-0 h-screen w-64 bg-[var(--bg-secondary)] border-r border-[var(--border)] flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-[var(--border)]">
-        <h1 className="text-xl font-bold text-[var(--text-primary)]">
-          Stablecoin
+        <h1 className="text-lg font-bold text-[var(--text-primary)] leading-tight">
+          Centralization
         </h1>
-        <p className="text-sm text-[var(--text-muted)]">Network Explorer</p>
+        <p className="text-sm text-[var(--accent)] font-medium">Observatory</p>
+        <p className="text-xs text-[var(--text-muted)] mt-1">Bitcoin + Stablecoins</p>
       </div>
 
       {/* Search */}
@@ -60,9 +64,9 @@ export default function Navigation() {
       </div>
 
       {/* Legend */}
-      <div className="p-4 border-t border-[var(--border)]">
-        <p className="text-xs text-[var(--text-muted)] mb-3">Legend</p>
-        <div className="space-y-2">
+      <div className="p-4 border-t border-[var(--border)] overflow-y-auto max-h-[40vh]">
+        <p className="text-xs text-[var(--text-muted)] mb-3">Entity Types</p>
+        <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-[var(--node-person)]"></span>
             <span className="text-xs text-[var(--text-secondary)]">Person</span>
@@ -87,6 +91,19 @@ export default function Navigation() {
             <span className="w-3 h-3 rounded-full bg-[var(--node-event)]"></span>
             <span className="text-xs text-[var(--text-secondary)]">Event</span>
           </div>
+        </div>
+
+        <p className="text-xs text-[var(--text-muted)] mb-3">Edge Types</p>
+        <div className="space-y-2">
+          {ALL_EDGE_TYPES.map((edgeType) => (
+            <div key={edgeType} className="flex items-center gap-2">
+              <span
+                className="w-4 h-0.5 rounded"
+                style={{ backgroundColor: EDGE_COLORS[edgeType] }}
+              ></span>
+              <span className="text-xs text-[var(--text-secondary)]">{EDGE_LABELS[edgeType]}</span>
+            </div>
+          ))}
         </div>
       </div>
     </nav>

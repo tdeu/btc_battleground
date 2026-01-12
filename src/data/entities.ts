@@ -1,4 +1,26 @@
-import { Entity, TimelineEvent } from '@/types';
+import { Entity, TimelineEvent, EdgeType, GraphData, GraphLink } from '@/types';
+
+// Edge type classification patterns
+const EDGE_TYPE_PATTERNS: Record<EdgeType, RegExp> = {
+  ownership: /owns|owned|subsidiary|parent|acquir|controls|controlled|majority|issued|issues/i,
+  partnership: /partner|co-creat|collaborat|joint venture|alliance|cooperat/i,
+  regulatory: /regulat|sanction|lawsuit|sue|investigat|wells notice|enforcement|fine|audit|killed|forced|ordered/i,
+  funding: /invest|funded|raised|backing|capital|venture|seed|series|major.*investor/i,
+  boardSeat: /board|director|\bceo\b|\bcto\b|\bcfo\b|\bcoo\b|founder|co-founder|executive|chief|president|chairman|works with|associate/i,
+  custody: /custod|holds|stores|safekeep|vault|reserve|treasury|backing/i,
+  other: /.*/i,
+};
+
+export function classifyEdgeType(relationship: string): EdgeType {
+  const r = relationship.toLowerCase();
+  if (EDGE_TYPE_PATTERNS.ownership.test(r)) return 'ownership';
+  if (EDGE_TYPE_PATTERNS.regulatory.test(r)) return 'regulatory';
+  if (EDGE_TYPE_PATTERNS.boardSeat.test(r)) return 'boardSeat';
+  if (EDGE_TYPE_PATTERNS.funding.test(r)) return 'funding';
+  if (EDGE_TYPE_PATTERNS.custody.test(r)) return 'custody';
+  if (EDGE_TYPE_PATTERNS.partnership.test(r)) return 'partnership';
+  return 'other';
+}
 
 export const entities: Entity[] = [
   // STABLECOINS
@@ -116,11 +138,16 @@ export const entities: Entity[] = [
     name: 'BlackRock',
     type: 'organization',
     description: "World's largest asset manager. ~$12 trillion AUM.",
+    category: 'both',
+    centralizationScore: 0.1,
+    captureStory: 'BlackRock represents the apex of financial centralization. With ~$12 trillion AUM, they are the largest investor in most major corporations. Their IBIT Bitcoin ETF quickly became the largest, and their USDC investment ties them to stablecoins. When BlackRock speaks, markets move. Their embrace of crypto signals not decentralization, but the absorption of crypto into traditional finance.',
     connections: [
       { targetId: 'larry-fink', targetName: 'Larry Fink', relationship: 'CEO' },
       { targetId: 'circle', targetName: 'Circle', relationship: 'major investor' },
       { targetId: 'us-treasury', targetName: 'US Treasury', relationship: 'advisory role' },
       { targetId: 'federal-reserve', targetName: 'Federal Reserve', relationship: 'crisis manager' },
+      { targetId: 'ibit', targetName: 'iShares Bitcoin Trust (IBIT)', relationship: 'issues' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'uses for IBIT custody' },
     ],
   },
   {
@@ -195,10 +222,218 @@ export const entities: Entity[] = [
     id: 'strategy',
     name: 'Strategy (MicroStrategy)',
     type: 'organization',
-    description: 'Largest corporate Bitcoin holder.',
+    description: 'Largest corporate Bitcoin holder. ~450,000 BTC via convertible debt.',
+    category: 'bitcoin',
+    centralizationScore: 0.2,
     connections: [
       { targetId: 'michael-saylor', targetName: 'Michael Saylor', relationship: 'founder' },
       { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'subordinate to creditors' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodian for BTC holdings' },
+      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'benefited from approval' },
+    ],
+  },
+
+  // BITCOIN ETFs
+  {
+    id: 'ibit',
+    name: 'iShares Bitcoin Trust (IBIT)',
+    type: 'organization',
+    description: 'BlackRock Bitcoin ETF. Largest BTC ETF by AUM (~$55B).',
+    category: 'bitcoin',
+    centralizationScore: 0.15,
+    connections: [
+      { targetId: 'blackrock', targetName: 'BlackRock', relationship: 'issued by' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodian' },
+      { targetId: 'larry-fink', targetName: 'Larry Fink', relationship: 'CEO of parent company' },
+      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'approved' },
+      { targetId: 'sec', targetName: 'SEC', relationship: 'regulated by' },
+    ],
+  },
+  {
+    id: 'fbtc',
+    name: 'Fidelity Wise Origin (FBTC)',
+    type: 'organization',
+    description: 'Fidelity Bitcoin ETF. Second largest BTC ETF (~$20B AUM).',
+    category: 'bitcoin',
+    centralizationScore: 0.2,
+    connections: [
+      { targetId: 'fidelity', targetName: 'Fidelity Investments', relationship: 'issued by' },
+      { targetId: 'fidelity-digital', targetName: 'Fidelity Digital Assets', relationship: 'self-custody' },
+      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'approved' },
+      { targetId: 'sec', targetName: 'SEC', relationship: 'regulated by' },
+    ],
+  },
+  {
+    id: 'gbtc',
+    name: 'Grayscale Bitcoin Trust (GBTC)',
+    type: 'organization',
+    description: 'First Bitcoin trust, converted to ETF. ~$18B AUM. High fees caused outflows.',
+    category: 'bitcoin',
+    centralizationScore: 0.2,
+    connections: [
+      { targetId: 'grayscale', targetName: 'Grayscale Investments', relationship: 'issued by' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodian' },
+      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'converted to ETF' },
+      { targetId: 'sec', targetName: 'SEC', relationship: 'sued SEC to force approval' },
+    ],
+  },
+  {
+    id: 'arkb',
+    name: 'ARK 21Shares Bitcoin ETF (ARKB)',
+    type: 'organization',
+    description: 'ARK Invest and 21Shares joint Bitcoin ETF. ~$4B AUM.',
+    category: 'bitcoin',
+    centralizationScore: 0.2,
+    connections: [
+      { targetId: 'cathie-wood', targetName: 'Cathie Wood', relationship: 'ARK Invest CEO' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodian' },
+      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'approved' },
+    ],
+  },
+
+  // BITCOIN CUSTODIANS
+  {
+    id: 'coinbase-custody',
+    name: 'Coinbase Custody',
+    type: 'organization',
+    description: 'Institutional crypto custody. Custodian for 8 of 11 spot Bitcoin ETFs.',
+    category: 'bitcoin',
+    centralizationScore: 0.1,
+    captureStory: 'Coinbase Custody represents the most critical single point of failure in Bitcoin ETFs. With custody of ~90% of all ETF Bitcoin holdings, a security breach, regulatory action, or operational failure could affect hundreds of billions in assets. This concentration directly contradicts Bitcoin\'s decentralization ethos.',
+    connections: [
+      { targetId: 'coinbase', targetName: 'Coinbase', relationship: 'subsidiary of' },
+      { targetId: 'ibit', targetName: 'iShares Bitcoin Trust (IBIT)', relationship: 'custodian for' },
+      { targetId: 'gbtc', targetName: 'Grayscale Bitcoin Trust (GBTC)', relationship: 'custodian for' },
+      { targetId: 'arkb', targetName: 'ARK 21Shares Bitcoin ETF (ARKB)', relationship: 'custodian for' },
+      { targetId: 'sec', targetName: 'SEC', relationship: 'under investigation' },
+      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'primary cause' },
+    ],
+  },
+  {
+    id: 'fidelity-digital',
+    name: 'Fidelity Digital Assets',
+    type: 'organization',
+    description: 'Fidelity\'s crypto custody arm. Self-custodies FBTC holdings.',
+    category: 'bitcoin',
+    centralizationScore: 0.25,
+    connections: [
+      { targetId: 'fidelity', targetName: 'Fidelity Investments', relationship: 'subsidiary of' },
+      { targetId: 'fbtc', targetName: 'Fidelity Wise Origin (FBTC)', relationship: 'custodian for' },
+    ],
+  },
+  {
+    id: 'bitgo',
+    name: 'BitGo',
+    type: 'organization',
+    description: 'Institutional crypto custody and security. Multi-sig pioneer.',
+    category: 'bitcoin',
+    centralizationScore: 0.3,
+    connections: [
+      { targetId: 'mike-belshe', targetName: 'Mike Belshe', relationship: 'CEO' },
+      { targetId: 'galaxy-digital', targetName: 'Galaxy Digital', relationship: 'acquisition target' },
+    ],
+  },
+  {
+    id: 'fireblocks',
+    name: 'Fireblocks',
+    type: 'organization',
+    description: 'Enterprise crypto custody and transfer network.',
+    category: 'bitcoin',
+    centralizationScore: 0.3,
+    connections: [
+      { targetId: 'michael-shaulov', targetName: 'Michael Shaulov', relationship: 'CEO' },
+    ],
+  },
+
+  // BITCOIN-RELATED ORGANIZATIONS
+  {
+    id: 'fidelity',
+    name: 'Fidelity Investments',
+    type: 'organization',
+    description: 'Major asset manager. Early Bitcoin adopter among TradFi.',
+    category: 'bitcoin',
+    centralizationScore: 0.25,
+    connections: [
+      { targetId: 'fbtc', targetName: 'Fidelity Wise Origin (FBTC)', relationship: 'issues' },
+      { targetId: 'fidelity-digital', targetName: 'Fidelity Digital Assets', relationship: 'owns' },
+      { targetId: 'abigail-johnson', targetName: 'Abigail Johnson', relationship: 'CEO' },
+    ],
+  },
+  {
+    id: 'grayscale',
+    name: 'Grayscale Investments',
+    type: 'organization',
+    description: 'Crypto asset manager. Sued SEC to force ETF conversion.',
+    category: 'bitcoin',
+    centralizationScore: 0.25,
+    connections: [
+      { targetId: 'gbtc', targetName: 'Grayscale Bitcoin Trust (GBTC)', relationship: 'issues' },
+      { targetId: 'dcg', targetName: 'Digital Currency Group', relationship: 'owned by' },
+      { targetId: 'michael-sonnenshein', targetName: 'Michael Sonnenshein', relationship: 'former CEO' },
+      { targetId: 'sec', targetName: 'SEC', relationship: 'sued and won' },
+    ],
+  },
+  {
+    id: 'dcg',
+    name: 'Digital Currency Group',
+    type: 'organization',
+    description: 'Crypto conglomerate. Owns Grayscale, Genesis, CoinDesk.',
+    category: 'bitcoin',
+    centralizationScore: 0.2,
+    connections: [
+      { targetId: 'barry-silbert', targetName: 'Barry Silbert', relationship: 'founder & CEO' },
+      { targetId: 'grayscale', targetName: 'Grayscale Investments', relationship: 'owns' },
+      { targetId: 'genesis-bankruptcy', targetName: 'Genesis Bankruptcy (2023)', relationship: 'subsidiary collapsed' },
+    ],
+  },
+  {
+    id: 'galaxy-digital',
+    name: 'Galaxy Digital',
+    type: 'organization',
+    description: 'Crypto merchant bank and asset manager.',
+    category: 'bitcoin',
+    centralizationScore: 0.3,
+    connections: [
+      { targetId: 'mike-novogratz', targetName: 'Mike Novogratz', relationship: 'founder & CEO' },
+      { targetId: 'bitgo', targetName: 'BitGo', relationship: 'attempted acquisition' },
+    ],
+  },
+
+  // CORPORATE BTC HOLDERS
+  {
+    id: 'tesla',
+    name: 'Tesla',
+    type: 'organization',
+    description: 'Electric vehicle company. Holds ~9,720 BTC.',
+    category: 'bitcoin',
+    centralizationScore: 0.3,
+    connections: [
+      { targetId: 'elon-musk', targetName: 'Elon Musk', relationship: 'CEO' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'likely custodian' },
+    ],
+  },
+  {
+    id: 'block-inc',
+    name: 'Block Inc',
+    type: 'organization',
+    description: 'Formerly Square. Holds ~8,027 BTC. Jack Dorsey\'s company.',
+    category: 'bitcoin',
+    centralizationScore: 0.35,
+    connections: [
+      { targetId: 'jack-dorsey', targetName: 'Jack Dorsey', relationship: 'founder & CEO' },
+      { targetId: 'cash-app', targetName: 'Cash App', relationship: 'owns' },
+    ],
+  },
+  {
+    id: 'marathon-digital',
+    name: 'Marathon Digital',
+    type: 'organization',
+    description: 'Bitcoin mining company. Holds ~44,000 BTC.',
+    category: 'bitcoin',
+    centralizationScore: 0.25,
+    connections: [
+      { targetId: 'fred-thiel', targetName: 'Fred Thiel', relationship: 'CEO' },
+      { targetId: 'btc-mining-centralization', targetName: 'BTC Mining Centralization', relationship: 'contributes to' },
     ],
   },
 
@@ -456,6 +691,115 @@ export const entities: Entity[] = [
     ],
   },
 
+  // BITCOIN-RELATED PEOPLE
+  {
+    id: 'cathie-wood',
+    name: 'Cathie Wood',
+    type: 'person',
+    description: 'CEO of ARK Invest. Early Bitcoin ETF advocate.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'arkb', targetName: 'ARK 21Shares Bitcoin ETF (ARKB)', relationship: 'manages' },
+      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'lobbied for' },
+    ],
+  },
+  {
+    id: 'jack-dorsey',
+    name: 'Jack Dorsey',
+    type: 'person',
+    description: 'Founder of Twitter and Block Inc. Bitcoin maximalist.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'block-inc', targetName: 'Block Inc', relationship: 'founder & CEO' },
+      { targetId: 'cash-app', targetName: 'Cash App', relationship: 'owns via Block' },
+    ],
+  },
+  {
+    id: 'elon-musk',
+    name: 'Elon Musk',
+    type: 'person',
+    description: 'CEO of Tesla and SpaceX. Owns X (Twitter). Crypto market mover.',
+    category: 'both',
+    connections: [
+      { targetId: 'tesla', targetName: 'Tesla', relationship: 'CEO' },
+      { targetId: 'donald-trump', targetName: 'Donald Trump', relationship: 'DOGE advisor' },
+    ],
+  },
+  {
+    id: 'barry-silbert',
+    name: 'Barry Silbert',
+    type: 'person',
+    description: 'Founder of Digital Currency Group. Major crypto investor.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'dcg', targetName: 'Digital Currency Group', relationship: 'founder & CEO' },
+      { targetId: 'grayscale', targetName: 'Grayscale Investments', relationship: 'owns via DCG' },
+      { targetId: 'genesis-bankruptcy', targetName: 'Genesis Bankruptcy (2023)', relationship: 'subsidiary collapsed' },
+    ],
+  },
+  {
+    id: 'mike-novogratz',
+    name: 'Mike Novogratz',
+    type: 'person',
+    description: 'CEO of Galaxy Digital. Former Goldman Sachs partner.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'galaxy-digital', targetName: 'Galaxy Digital', relationship: 'founder & CEO' },
+    ],
+  },
+  {
+    id: 'abigail-johnson',
+    name: 'Abigail Johnson',
+    type: 'person',
+    description: 'CEO of Fidelity. Championed early crypto adoption.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'fidelity', targetName: 'Fidelity Investments', relationship: 'CEO' },
+      { targetId: 'fidelity-digital', targetName: 'Fidelity Digital Assets', relationship: 'created' },
+    ],
+  },
+  {
+    id: 'michael-sonnenshein',
+    name: 'Michael Sonnenshein',
+    type: 'person',
+    description: 'Former CEO of Grayscale. Led SEC lawsuit.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'grayscale', targetName: 'Grayscale Investments', relationship: 'former CEO' },
+      { targetId: 'gbtc', targetName: 'Grayscale Bitcoin Trust (GBTC)', relationship: 'led ETF conversion' },
+    ],
+  },
+  {
+    id: 'mike-belshe',
+    name: 'Mike Belshe',
+    type: 'person',
+    description: 'CEO of BitGo. Crypto custody pioneer.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'bitgo', targetName: 'BitGo', relationship: 'CEO' },
+    ],
+  },
+  {
+    id: 'michael-shaulov',
+    name: 'Michael Shaulov',
+    type: 'person',
+    description: 'CEO of Fireblocks.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'fireblocks', targetName: 'Fireblocks', relationship: 'CEO' },
+    ],
+  },
+  {
+    id: 'fred-thiel',
+    name: 'Fred Thiel',
+    type: 'person',
+    description: 'CEO of Marathon Digital.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'marathon-digital', targetName: 'Marathon Digital', relationship: 'CEO' },
+    ],
+  },
+
   // CONCEPTS
   {
     id: 'dollar-hegemony',
@@ -524,6 +868,54 @@ export const entities: Entity[] = [
     ],
   },
 
+  // BITCOIN CONCEPTS
+  {
+    id: 'btc-custody-concentration',
+    name: 'BTC Custody Concentration',
+    type: 'concept',
+    description: 'Coinbase custodies 8 of 11 Bitcoin ETFs, creating systemic risk.',
+    category: 'bitcoin',
+    captureStory: 'The irony of Bitcoin ETFs is profound: a technology designed to eliminate trusted third parties now depends almost entirely on a single custodian. Coinbase Custody holds hundreds of billions in Bitcoin across multiple ETFs. This creates a honeypot for hackers, a single point for regulatory pressure, and concentrates counterparty risk in ways that contradict Bitcoin\'s founding principles.',
+    connections: [
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'primary cause' },
+      { targetId: 'ibit', targetName: 'iShares Bitcoin Trust (IBIT)', relationship: 'example' },
+      { targetId: 'gbtc', targetName: 'Grayscale Bitcoin Trust (GBTC)', relationship: 'example' },
+    ],
+  },
+  {
+    id: 'btc-mining-centralization',
+    name: 'BTC Mining Centralization',
+    type: 'concept',
+    description: 'Bitcoin mining increasingly concentrated in large public companies.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'marathon-digital', targetName: 'Marathon Digital', relationship: 'major miner' },
+    ],
+  },
+  {
+    id: 'self-custody',
+    name: 'Self-Custody',
+    type: 'concept',
+    description: '"Not your keys, not your coins." Core Bitcoin ethos being eroded.',
+    category: 'bitcoin',
+    captureStory: 'Self-custody was once the default for Bitcoin holders. Today, estimates suggest only ~30% of Bitcoin is self-custodied, down from ~90% in 2015. ETFs, exchanges, and institutional custody have made "not your keys, not your coins" a minority practice. This represents the quiet capture of Bitcoin by traditional finance.',
+    connections: [
+      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'threatened by' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'alternative to' },
+    ],
+  },
+  {
+    id: 'cash-app',
+    name: 'Cash App',
+    type: 'concept',
+    description: 'Block Inc payment app with Bitcoin buying feature.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'block-inc', targetName: 'Block Inc', relationship: 'owned by' },
+      { targetId: 'jack-dorsey', targetName: 'Jack Dorsey', relationship: 'created by' },
+    ],
+  },
+
   // EVENTS
   {
     id: 'ftx-collapse',
@@ -562,6 +954,51 @@ export const entities: Entity[] = [
       { targetId: 'financial-surveillance', targetName: 'Financial Surveillance', relationship: 'admitted capabilities' },
     ],
     metadata: { date: '2025-03' },
+  },
+
+  // BITCOIN EVENTS
+  {
+    id: 'btc-etf-approval',
+    name: 'BTC ETF Approval (Jan 2024)',
+    type: 'event',
+    description: 'SEC approves 11 spot Bitcoin ETFs. Watershed moment for institutional adoption.',
+    category: 'bitcoin',
+    captureStory: 'January 10, 2024 marked Bitcoin\'s full embrace by Wall Street. The SEC approved 11 spot Bitcoin ETFs simultaneously, including products from BlackRock, Fidelity, and Grayscale. Within months, these ETFs accumulated over $100B in assets. But this "victory" came at a cost: Bitcoin holdings concentrated into custodial honeypots, with Coinbase alone securing ~90% of ETF Bitcoin.',
+    connections: [
+      { targetId: 'sec', targetName: 'SEC', relationship: 'approved' },
+      { targetId: 'ibit', targetName: 'iShares Bitcoin Trust (IBIT)', relationship: 'approved' },
+      { targetId: 'fbtc', targetName: 'Fidelity Wise Origin (FBTC)', relationship: 'approved' },
+      { targetId: 'gbtc', targetName: 'Grayscale Bitcoin Trust (GBTC)', relationship: 'converted' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'became dominant custodian' },
+      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'created' },
+    ],
+    metadata: { date: '2024-01' },
+  },
+  {
+    id: 'genesis-bankruptcy',
+    name: 'Genesis Bankruptcy (2023)',
+    type: 'event',
+    description: 'Genesis Global filed for bankruptcy. DCG subsidiary collapse.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'dcg', targetName: 'Digital Currency Group', relationship: 'parent company' },
+      { targetId: 'barry-silbert', targetName: 'Barry Silbert', relationship: 'DCG founder' },
+      { targetId: 'ftx-collapse', targetName: 'FTX Collapse (2022)', relationship: 'contagion from' },
+    ],
+    metadata: { date: '2023-01' },
+  },
+  {
+    id: 'microstrategy-btc-buys',
+    name: 'MicroStrategy BTC Accumulation (2020-)',
+    type: 'event',
+    description: 'MicroStrategy begins aggressive Bitcoin buying via debt.',
+    category: 'bitcoin',
+    connections: [
+      { targetId: 'strategy', targetName: 'Strategy (MicroStrategy)', relationship: 'buyer' },
+      { targetId: 'michael-saylor', targetName: 'Michael Saylor', relationship: 'architect' },
+      { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'funded by' },
+    ],
+    metadata: { date: '2020-08' },
   },
 ];
 
@@ -630,10 +1067,68 @@ export const timelineEvents: TimelineEvent[] = [
     entityIds: ['congressional-hearing', 'charles-cascarilla', 'paxos'],
     type: 'event',
   },
+
+  // BITCOIN TIMELINE EVENTS
+  {
+    id: 'te-btc-1',
+    date: '2020-08-11',
+    title: 'MicroStrategy Announces Bitcoin Strategy',
+    description: 'MicroStrategy buys first $250M in Bitcoin, beginning corporate adoption trend.',
+    entityIds: ['strategy', 'michael-saylor', 'microstrategy-btc-buys'],
+    type: 'event',
+  },
+  {
+    id: 'te-btc-2',
+    date: '2021-02-08',
+    title: 'Tesla Buys $1.5B in Bitcoin',
+    description: 'Tesla reveals $1.5B Bitcoin purchase, later sold most holdings.',
+    entityIds: ['tesla', 'elon-musk'],
+    type: 'event',
+  },
+  {
+    id: 'te-btc-3',
+    date: '2023-01-19',
+    title: 'Genesis Files for Bankruptcy',
+    description: 'Genesis Global declares bankruptcy following FTX contagion.',
+    entityIds: ['genesis-bankruptcy', 'dcg', 'barry-silbert'],
+    type: 'event',
+  },
+  {
+    id: 'te-btc-4',
+    date: '2023-08-29',
+    title: 'Grayscale Wins SEC Lawsuit',
+    description: 'Court rules SEC wrong to deny GBTC ETF conversion. Forces approval.',
+    entityIds: ['grayscale', 'gbtc', 'sec'],
+    type: 'event',
+  },
+  {
+    id: 'te-btc-5',
+    date: '2024-01-10',
+    title: 'SEC Approves Spot Bitcoin ETFs',
+    description: '11 spot Bitcoin ETFs approved simultaneously. BlackRock, Fidelity, Grayscale lead.',
+    entityIds: ['btc-etf-approval', 'ibit', 'fbtc', 'gbtc', 'sec'],
+    type: 'event',
+  },
+  {
+    id: 'te-btc-6',
+    date: '2024-03-14',
+    title: 'Bitcoin ETFs Hit $50B AUM',
+    description: 'Combined Bitcoin ETF assets under management surpass $50 billion.',
+    entityIds: ['ibit', 'fbtc', 'coinbase-custody'],
+    type: 'event',
+  },
+  {
+    id: 'te-btc-7',
+    date: '2024-11-05',
+    title: 'Trump Wins Election',
+    description: 'Pro-crypto Trump wins presidency. Howard Lutnick nominated for Commerce.',
+    entityIds: ['donald-trump', 'howard-lutnick', 'david-sacks'],
+    type: 'event',
+  },
 ];
 
 // Helper function to convert entities to graph data
-export function getGraphData() {
+export function getGraphData(): GraphData {
   const nodes = entities.map(e => ({
     id: e.id,
     name: e.name,
@@ -641,7 +1136,7 @@ export function getGraphData() {
     connections: e.connections.length,
   }));
 
-  const links: { source: string; target: string; relationship: string }[] = [];
+  const links: GraphLink[] = [];
   const seenLinks = new Set<string>();
 
   entities.forEach(entity => {
@@ -653,6 +1148,9 @@ export function getGraphData() {
           source: entity.id,
           target: conn.targetId,
           relationship: conn.relationship,
+          edgeType: classifyEdgeType(conn.relationship),
+          strength: 0.5,
+          verified: false,
         });
       }
     });
