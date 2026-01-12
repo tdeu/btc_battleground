@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         .eq('entity_id', entityId);
 
       if (mentionIds && mentionIds.length > 0) {
-        const newsIds = mentionIds.map(m => m.news_id);
+        const newsIds = (mentionIds as { news_id: string }[]).map(m => m.news_id);
         query = query.in('id', newsIds);
       } else {
         return NextResponse.json({ news: [] });

@@ -76,11 +76,15 @@ export async function GET(request: Request) {
 
         // Insert entity mentions
         for (const match of matches) {
-          await supabase.from('news_entity_mentions').insert({
-            news_id: newsItem.id,
-            entity_id: match.entityId,
-            confidence: match.confidence,
-          }).catch(() => {}); // Ignore if entity doesn't exist in DB yet
+          try {
+            await supabase.from('news_entity_mentions').insert({
+              news_id: newsItem.id,
+              entity_id: match.entityId,
+              confidence: match.confidence,
+            });
+          } catch {
+            // Ignore if entity doesn't exist in DB yet
+          }
         }
       } catch (err) {
         results.rss.errors++;
@@ -127,11 +131,15 @@ export async function GET(request: Request) {
           results.currents.inserted++;
 
           for (const match of matches) {
-            await supabase.from('news_entity_mentions').insert({
-              news_id: newsItem.id,
-              entity_id: match.entityId,
-              confidence: match.confidence,
-            }).catch(() => {});
+            try {
+              await supabase.from('news_entity_mentions').insert({
+                news_id: newsItem.id,
+                entity_id: match.entityId,
+                confidence: match.confidence,
+              });
+            } catch {
+              // Ignore errors
+            }
           }
         } catch (err) {
           results.currents.errors++;
