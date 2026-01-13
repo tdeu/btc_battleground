@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Network, Users, Clock, Newspaper, Search, BarChart3, Info } from 'lucide-react';
+import { LayoutDashboard, Network, Users, Clock, Newspaper, BarChart3, Info } from 'lucide-react';
 import { EDGE_COLORS, EDGE_LABELS, ALL_EDGE_TYPES } from '@/lib/data';
+import GlobalSearch from './GlobalSearch';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -29,16 +30,9 @@ export default function Navigation() {
         <p className="text-xs text-[var(--text-muted)] mt-1">Bitcoin + Stablecoins</p>
       </div>
 
-      {/* Search */}
+      {/* Global Search */}
       <div className="p-4">
-        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border)]">
-          <Search size={16} className="text-[var(--text-muted)]" />
-          <input
-            type="text"
-            placeholder="Search entities..."
-            className="bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none w-full"
-          />
-        </div>
+        <GlobalSearch />
       </div>
 
       {/* Nav Items */}

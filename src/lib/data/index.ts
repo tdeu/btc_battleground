@@ -27,7 +27,8 @@ import type {
 } from '@/types';
 
 // Configuration: Set to true to use Supabase, false for hardcoded data
-const USE_SUPABASE = false;
+// After running migration, set to true to use database
+const USE_SUPABASE = true;
 
 // =============================================================================
 // ENTITY OPERATIONS
@@ -59,8 +60,9 @@ export async function getEntities(): Promise<Entity[]> {
     type: e.type as EntityType,
     description: e.description,
     category: e.category,
-    centralizationScore: e.centralization_score,
+    decentralizationScore: e.decentralization_score,
     captureStory: e.capture_story,
+    metadata: e.metadata,
     connections: [], // Will be populated separately
   }));
 }
@@ -101,8 +103,9 @@ export async function getEntity(id: string): Promise<Entity | null> {
     type: entityData.type as EntityType,
     description: entityData.description,
     category: entityData.category,
-    centralizationScore: entityData.centralization_score,
+    decentralizationScore: entityData.decentralization_score,
     captureStory: entityData.capture_story,
+    metadata: entityData.metadata,
     connections: connData.map(c => ({
       targetId: c.target_id,
       targetName: c.target?.name || c.target_id,
@@ -139,8 +142,9 @@ export async function getEntitiesByType(type: EntityType): Promise<Entity[]> {
     type: e.type as EntityType,
     description: e.description,
     category: e.category,
-    centralizationScore: e.centralization_score,
+    decentralizationScore: e.decentralization_score,
     captureStory: e.capture_story,
+    metadata: e.metadata,
     connections: [],
   }));
 }

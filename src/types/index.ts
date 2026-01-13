@@ -23,7 +23,7 @@ export interface Entity {
   category?: EntityCategory;
   description: string;
   connections: Connection[];
-  centralizationScore?: number;
+  decentralizationScore?: number; // 0-100 scale (100 = fully decentralized)
   captureStory?: string;
   sources?: EntitySource[];
   metadata?: Record<string, string>;

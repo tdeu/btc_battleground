@@ -12,8 +12,9 @@ export interface Database {
           type: EntityType;
           category: EntityCategory | null;
           description: string;
-          centralization_score: number | null;
+          decentralization_score: number | null; // 0-100 scale (100 = fully decentralized)
           capture_story: string | null;
+          metadata: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -23,8 +24,9 @@ export interface Database {
           type: EntityType;
           category?: EntityCategory | null;
           description: string;
-          centralization_score?: number | null;
+          decentralization_score?: number | null; // 0-100 scale
           capture_story?: string | null;
+          metadata?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -34,8 +36,9 @@ export interface Database {
           type?: EntityType;
           category?: EntityCategory | null;
           description?: string;
-          centralization_score?: number | null;
+          decentralization_score?: number | null; // 0-100 scale
           capture_story?: string | null;
+          metadata?: Record<string, unknown> | null;
           updated_at?: string;
         };
       };

@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { entities, timelineEvents, getStats } from '@/data/entities';
-import { Users, Link2, Activity, TrendingUp } from 'lucide-react';
+import { Users, Link2, Activity, TrendingUp, AlertTriangle, Shield } from 'lucide-react';
+import { getDecentralizationColor, getDecentralizationLabel, getDefaultScore } from '@/lib/scoring';
 
 export default function Dashboard() {
   const stats = getStats();
@@ -78,6 +80,63 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Centralization Spotlight */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-[var(--bg-secondary)] rounded-xl p-6 border border-[var(--border)]">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle size={20} className="text-red-500" />
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+              Most Centralized Entities
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {entities
+              .map(e => ({
+                ...e,
+                score: e.decentralizationScore ?? getDefaultScore(e.type)
+              }))
+              .sort((a, b) => a.score - b.score)
+              .slice(0, 5)
+              .map((entity) => (
+                <EntityScoreCard key={entity.id} entity={entity} score={entity.score} />
+              ))}
+          </div>
+          <Link
+            href="/entities"
+            className="block mt-4 text-center text-sm text-[var(--accent)] hover:underline"
+          >
+            View all entities
+          </Link>
+        </div>
+
+        <div className="bg-[var(--bg-secondary)] rounded-xl p-6 border border-[var(--border)]">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield size={20} className="text-green-500" />
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+              Most Decentralized
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {entities
+              .map(e => ({
+                ...e,
+                score: e.decentralizationScore ?? getDefaultScore(e.type)
+              }))
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 5)
+              .map((entity) => (
+                <EntityScoreCard key={entity.id} entity={entity} score={entity.score} />
+              ))}
+          </div>
+          <Link
+            href="/entities"
+            className="block mt-4 text-center text-sm text-[var(--accent)] hover:underline"
+          >
+            View all entities
+          </Link>
+        </div>
+      </div>
+
       {/* Key Thesis */}
       <div className="bg-[var(--bg-secondary)] rounded-xl p-6 border border-[var(--border)]">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
@@ -140,5 +199,47 @@ function ThesisCard({ title, description }: { title: string; description: string
       <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">{title}</h3>
       <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{description}</p>
     </div>
+  );
+}
+
+function EntityScoreCard({ entity, score }: { entity: typeof entities[0]; score: number }) {
+  const color = getDecentralizationColor(score);
+  const label = getDecentralizationLabel(score);
+
+  const typeLabels: Record<string, string> = {
+    person: 'Person',
+    organization: 'Organization',
+    stablecoin: 'Stablecoin',
+    government: 'Government',
+    concept: 'Concept',
+    event: 'Event',
+  };
+
+  return (
+    <Link
+      href={`/entities?entity=${entity.id}`}
+      className="flex items-center gap-3 p-3 bg-[var(--bg-tertiary)] rounded-lg hover:bg-[var(--bg-tertiary)]/80 transition-colors"
+    >
+      <div
+        className="w-3 h-3 rounded-full flex-shrink-0"
+        style={{ backgroundColor: color }}
+        title={`Score: ${score}/100`}
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+          {entity.name}
+        </p>
+        <p className="text-xs text-[var(--text-muted)]">
+          {typeLabels[entity.type] || entity.type}
+        </p>
+      </div>
+      <div
+        className="px-2 py-1 rounded text-xs font-medium flex-shrink-0"
+        style={{ backgroundColor: `${color}20`, color }}
+        title={label}
+      >
+        {score}
+      </div>
+    </Link>
   );
 }

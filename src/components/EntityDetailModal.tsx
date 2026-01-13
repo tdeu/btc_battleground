@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Network, FileText, Newspaper, Link2, ExternalLink } from 'lucide-react';
 import { EDGE_COLORS, EDGE_LABELS } from '@/lib/data';
 import { classifyEdgeType } from '@/data/entities';
+import { getDecentralizationColor, getDecentralizationLabel } from '@/lib/scoring';
 import type { Entity, EntityType, EdgeType } from '@/types';
 import NewsFeed from './NewsFeed';
 
@@ -24,19 +25,10 @@ interface EntityDetailModalProps {
 
 type TabType = 'story' | 'connections' | 'news' | 'sources';
 
-function CentralizationBadge({ score }: { score: number }) {
-  // Score is 0-1, lower = more centralized
-  const percentage = Math.round(score * 100);
-  let color = '#ef4444'; // Red for centralized
-  let label = 'Centralized';
-
-  if (score > 0.7) {
-    color = '#22c55e'; // Green for decentralized
-    label = 'Decentralized';
-  } else if (score > 0.4) {
-    color = '#eab308'; // Yellow for hybrid
-    label = 'Hybrid';
-  }
+function DecentralizationBadge({ score }: { score: number }) {
+  // Score is 0-100, higher = more decentralized
+  const color = getDecentralizationColor(score);
+  const label = getDecentralizationLabel(score);
 
   return (
     <div
@@ -47,7 +39,7 @@ function CentralizationBadge({ score }: { score: number }) {
         className="w-2 h-2 rounded-full"
         style={{ backgroundColor: color }}
       />
-      {label} ({percentage}%)
+      {label} ({score})
     </div>
   );
 }
@@ -100,8 +92,8 @@ export default function EntityDetailModal({
                     {entity.type}
                   </span>
                 </div>
-                {entity.centralizationScore !== undefined && (
-                  <CentralizationBadge score={entity.centralizationScore} />
+                {entity.decentralizationScore !== undefined && (
+                  <DecentralizationBadge score={entity.decentralizationScore} />
                 )}
               </div>
 
