@@ -1,196 +1,446 @@
-# Stablecoin Network Explorer
+# Centralization Observatory
 
-A visual intelligence platform mapping the actors, connections, and events shaping the stablecoin ecosystem and dollar hegemony.
+Track the centralization of crypto: Bitcoin ETFs, stablecoin custody, and institutional capture.
 
-**Live Demo:** [stablecoin-explorer.vercel.app](https://stablecoin-explorer.vercel.app)
+**Live:** [stablecoin-explorer.vercel.app](https://stablecoin-explorer.vercel.app)
 
-## Overview
+---
 
-This project visualizes the complex web of relationships between stablecoins, their issuers, financial institutions, government agencies, and key individuals. It helps users understand:
+## UX Overview
 
-- Who controls the major stablecoins (USDT, USDC, DAI, BUSD, PYUSD)
-- How stablecoins connect to traditional finance (BlackRock, Cantor Fitzgerald, JP Morgan)
-- The regulatory landscape (SEC, Treasury, FinCEN, OCC)
-- Key events that shaped the ecosystem
+### Navigation (Sidebar)
 
-## Features
+**Current state:**
+- Fixed 264px sidebar on all pages
+- Logo: "Centralization Observatory" with "Bitcoin + Stablecoins" tagline
+- Search input (currently non-functional placeholder)
+- 7 nav items: Dashboard, Network, People & Entities, Timeline, News Feed, Metrics, About
+- Legend section showing Entity Types (6 colors) and Edge Types (7 colors)
 
-### Dashboard
-- Overview statistics (49 entities, 156+ connections)
-- Entity breakdown by type
-- Recent events feed
-- Key thesis cards explaining the stablecoin narrative
+**Interaction:**
+- Active page highlighted with accent color
+- Hover states on nav items
+- Legend is scrollable if content overflows
 
-### Network Graph
-- Interactive D3.js force-directed graph
-- Zoom, pan, and drag functionality
-- Click nodes to view entity details
-- Filter by entity type (Person, Organization, Stablecoin, Government, Concept, Event)
-- Color-coded nodes for easy identification
+**UX considerations:**
+- Search is a placeholder - needs implementation
+- Legend takes significant vertical space - could be collapsible
+- Mobile responsiveness not implemented (sidebar is fixed width)
 
-### People & Entities
-- Searchable list of all tracked entities
-- Filter buttons by type
-- Detailed view with all connections
-- Click-through navigation between connected entities
+---
 
-### Timeline
-- Chronological view of key events (2014-2025)
-- Events linked to related entities
-- Source citations where available
+## Pages
 
-### News Feed
-- Live news from crypto RSS feeds (CoinDesk, Cointelegraph, The Block, Decrypt)
-- Automatic filtering for stablecoin-relevant content
-- Entity tagging and relevance scoring
-- Refresh on demand
+### 1. Dashboard (`/`)
+
+**Purpose:** Overview of the entire dataset with key statistics and thesis.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────┐
+│  Heading + Description                      │
+├──────────┬──────────┬──────────┬───────────┤
+│ Entities │ Connect. │ Timeline │ Stables   │  ← 4 stat cards
+├──────────┴──────────┴──────────┴───────────┤
+│ Entities by Type    │ Recent Events        │  ← 2 columns
+├─────────────────────┴──────────────────────┤
+│ Key Thesis (3 cards)                       │
+└─────────────────────────────────────────────┘
+```
+
+**Current UX:**
+- Static data display, no interactions beyond viewing
+- Recent events list shows 5 most recent (sorted by date)
+- Entity type breakdown uses color dots matching the legend
+- Thesis cards explain the core narrative
+
+**UX considerations:**
+- Stat cards could link to relevant pages (click "Entities" → go to /entities)
+- Recent events could be clickable to navigate to timeline or entity
+- No loading states (data is static)
+- Thesis cards are text-only - could have expandable details
+
+---
+
+### 2. Network Graph (`/network`)
+
+**Purpose:** Interactive visualization of all entity connections.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────┐
+│ Header: Title + Entity Type Dropdown        │
+├─────────────────────────────────────────────┤
+│ Edge Type Filter Buttons (All, Ownership,   │
+│ Partnership, Regulatory, Funding, etc.)     │
+├─────────────────────────────────────────────┤
+│                                             │
+│         D3.js Force-Directed Graph          │
+│                                             │
+│   [Capture Path Panel]   [Selected Node]    │
+│                                             │
+├─────────────────────────────────────────────┤
+│ Instructions: Drag to pan • Scroll to zoom  │
+└─────────────────────────────────────────────┘
+```
+
+**Interactions:**
+1. **Pan/Zoom:** Scroll to zoom, drag background to pan
+2. **Node drag:** Drag individual nodes to reposition
+3. **Node click:**
+   - If Capture Path mode: Select as path endpoint
+   - Otherwise: Open side panel with entity details
+4. **Node hover:** Highlight with white border
+5. **Entity Type Filter:** Dropdown filters nodes by type
+6. **Edge Type Filter:** Buttons filter connections by relationship type
+7. **Capture Path:** Click button to open panel, then click two nodes to find shortest path
+
+**Capture Path Panel:**
+- Collapsible (button toggles open/closed)
+- Shows slots for 2 nodes (green "1", blue "2")
+- After selecting both: Shows path result with hop count
+- Path visualization lists each node and edge relationship
+- "Clear Selection" button resets
+
+**Selected Node Panel:**
+- Appears top-right when node clicked (outside Capture Path mode)
+- Shows: Type badge, name, description
+- Lists all connections with relationship text
+- Click connection to navigate to that entity
+
+**UX considerations:**
+- Graph can be overwhelming with 81 nodes - initial zoom/layout matters
+- No way to search/find a specific node from the graph page
+- Path highlighting dims other nodes but graph stays busy
+- Mobile experience is poor (drag conflicts with scroll)
+- No "reset view" button to return to default zoom/position
+- Selected panel and Capture Path can't be open simultaneously
+- Edge colors are visible but legend is in sidebar (not on graph)
+
+---
+
+### 3. People & Entities (`/entities`)
+
+**Purpose:** Searchable/filterable list with detail view.
+
+**Layout:**
+```
+┌──────────────────┬──────────────────────────┐
+│ Search + Filters │                          │
+├──────────────────┤                          │
+│                  │     Entity Detail        │
+│   Entity List    │     (right panel)        │
+│   (scrollable)   │                          │
+│                  │                          │
+├──────────────────┤                          │
+│ X of Y entities  │                          │
+└──────────────────┴──────────────────────────┘
+```
+
+**Left Panel (List):**
+- Search input (filters by name and description)
+- Filter buttons for each entity type
+- Scrollable list of entity cards
+- Each card shows: type dot, type label, name, description (truncated), connection count
+- Click card to select and view details
+- Footer shows "X of Y entities"
+
+**Right Panel (Detail):**
+- Empty state: "Select an entity to view details"
+- Selected state:
+  - Type badge + "Full Details" button
+  - Large entity name
+  - Full description
+  - Connections list with edge type badges
+  - Click connection to navigate to that entity
+
+**Full Details Modal:**
+- Triggered by "Full Details" button
+- 4 tabs: Story, Connections, News, Sources
+- **Story tab:** Capture narrative (most entities show "No capture story available")
+- **Connections tab:** Same as panel but with more detail
+- **News tab:** Filtered news feed for this entity
+- **Sources tab:** Citation links (most show "No sources documented")
+
+**Interactions:**
+- Type text in search → instant filter
+- Click type button → toggle filter
+- Click entity → loads in right panel
+- Click "Full Details" → opens modal
+- Click connection → navigates to that entity (panel updates or modal navigates)
+- Press Escape → closes modal
+
+**UX considerations:**
+- Search works but no keyboard shortcut to focus it
+- Can't combine type filters (e.g., show People AND Organizations)
+- Modal "Story" and "Sources" tabs are mostly empty - could hide if empty
+- News tab in modal loads separately (shows loading spinner)
+- No way to return to list from modal without closing modal
+- Connection click in modal changes the modal content (jarring)
+
+---
+
+### 4. Timeline (`/timeline`)
+
+**Purpose:** Chronological view of key events.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────┐
+│ Header: Title + Description                 │
+├─────────────────────────────────────────────┤
+│                                             │
+│  2024 ──●── Event Card                      │
+│         │                                   │
+│         ●── Event Card                      │
+│         │                                   │
+│  2023 ──●── Event Card                      │
+│         │                                   │
+│  ...                                        │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+**Current UX:**
+- Vertical timeline with year markers
+- Each event shows: date, title, description
+- Entity tags linking to related entities (clickable)
+- Events sorted newest first (2024 at top)
+- 15 events total (8 stablecoin, 7 Bitcoin-related)
+
+**Interactions:**
+- Click entity tag → navigates to /entities with that entity selected
+
+**UX considerations:**
+- No filtering by category (Bitcoin vs Stablecoin events)
+- No filtering by date range
+- No search
+- Entity tags click behavior: goes to entities page, but doesn't show modal
+- Could benefit from horizontal timeline option for overview
+- Events are static - no expand/collapse for more detail
+
+---
+
+### 5. News Feed (`/news`)
+
+**Purpose:** Live news with entity matching.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────┐
+│ Header: Title + Last Updated + Refresh Btn  │
+├─────────────────────────────────────────────┤
+│                                             │
+│  News Card                                  │
+│  - Source + Time ago                        │
+│  - Title (link)                             │
+│  - Description                              │
+│  - Entity Tags                              │
+│                                             │
+│  News Card...                               │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+**Current UX:**
+- Pulls from RSS feeds (CoinDesk, Cointelegraph, The Block, Decrypt)
+- Auto-tags entities mentioned in articles
+- Shows relevance badge (High/Medium/Low)
+- External links open in new tab
+- Refresh button to fetch latest
+
+**Interactions:**
+- Click "Refresh" → fetches new articles (shows loading spinner)
+- Click article title → opens external link
+- Click entity tag → navigates to entities page
+
+**UX considerations:**
+- No filtering by source
+- No filtering by entity
+- No search
+- No infinite scroll (shows limited articles)
+- Entity matching can be imprecise (false positives)
+- "Last updated" shows time, not how fresh the data is
+
+---
+
+### 6. Metrics (`/metrics`)
+
+**Purpose:** Centralization metrics dashboard.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────┐
+│ Header: Title + Last Updated + Refresh      │
+├──────────┬──────────┬──────────┬───────────┤
+│ Stable   │ BTC in   │ Corp BTC │ Self-     │  ← 4 KPI cards
+│ Supply   │ ETFs     │ Holdings │ Custody   │
+├──────────┴──────────┼──────────┴───────────┤
+│ Stablecoin Market   │ BTC ETF Custody      │
+│ Share (bar chart)   │ Concentration        │
+├─────────────────────┼──────────────────────┤
+│ Regulatory Capture  │ Corporate BTC        │
+│ Index (gauge)       │ Holdings (list)      │
+├─────────────────────┴──────────────────────┤
+│ Data Sources (links)                       │
+└─────────────────────────────────────────────┘
+```
+
+**Visualizations:**
+1. **KPI Cards:** Total Stablecoin Supply, BTC in ETFs, Corporate BTC, Self-Custody Estimate
+2. **Stablecoin Market Share:** Stacked bar with legend (USDT 65%, USDC 21%, etc.)
+3. **BTC ETF Custody:** Stacked bar showing ETF market share
+4. **Regulatory Capture Index:** Gauge visualization (7.2/10)
+5. **Corporate BTC Holdings:** List with company, BTC amount, USD value
+
+**Interactions:**
+- Refresh button (currently simulates refresh with timeout)
+- Hover on bar chart segments shows tooltip with name and percentage
+- Data source links open in new tab
+
+**UX considerations:**
+- Data is placeholder/static - not connected to live APIs
+- Refresh button doesn't actually fetch new data
+- No historical comparison (no "vs last week")
+- Gauge is custom CSS - could be more polished
+- Warning badges (yellow triangles) add narrative but no click action
+- Mobile layout untested
+
+---
+
+### 7. About (`/about`)
+
+**Purpose:** Explain thesis, methodology, and data sources.
+
+**Layout:**
+```
+┌─────────────────────────────────────────────┐
+│ Header: Title + Subtitle                    │
+├─────────────────────────────────────────────┤
+│ Our Thesis (warning icon)                   │
+│ - 4 paragraphs explaining centralization    │
+│ - Highlighted callout                       │
+├─────────────────────────────────────────────┤
+│ Methodology (eye icon)                      │
+│ - Centralization Score explanation          │
+│ - Edge Types explanation                    │
+├─────────────────────────────────────────────┤
+│ Data Sources (database icon)               │
+│ - 5 source links with descriptions          │
+├─────────────────────────────────────────────┤
+│ Footer: Disclaimer + GitHub link            │
+└─────────────────────────────────────────────┘
+```
+
+**Interactions:**
+- Data source cards are links (hover state, open external)
+- GitHub link in footer
+
+**UX considerations:**
+- Text-heavy, could benefit from visuals
+- Methodology score ranges could show example entities
+- No anchor links to jump to sections
+- GitHub link goes to generic github.com (needs real repo URL)
+
+---
+
+## Component Inventory
+
+| Component | Location | Used On |
+|-----------|----------|---------|
+| `Navigation` | Sidebar | All pages |
+| `NewsFeed` | News list | /news, EntityDetailModal |
+| `EntityDetailModal` | Modal overlay | /entities |
+| `CapturePath` | Floating panel | /network |
+
+---
+
+## Data Flow
+
+```
+src/data/entities.ts (81 entities, hardcoded)
+         ↓
+    getGraphData() → Network graph
+    getStats() → Dashboard
+    entities array → Entities page, Timeline
+         ↓
+src/lib/data/index.ts (abstraction layer, edge colors/labels)
+         ↓
+    EDGE_COLORS, EDGE_LABELS → Network, Entities, Navigation
+```
+
+**News Flow:**
+```
+/api/news/fetch → RSS feeds → Supabase (news_items table)
+         ↓
+/api/news → Query Supabase → NewsFeed component
+```
+
+---
+
+## Known UX Issues
+
+### High Priority
+1. **Search is non-functional** - Sidebar search does nothing
+2. **Mobile not supported** - Fixed sidebar breaks on small screens
+3. **Metrics data is static** - Refresh button is fake
+
+### Medium Priority
+4. **Graph overwhelming** - 81 nodes with no search/highlight
+5. **Empty modal tabs** - Story/Sources tabs mostly empty
+6. **No entity deep linking** - Can't share URL to specific entity
+
+### Low Priority
+7. **Timeline not filterable** - No category/date filters
+8. **News not filterable** - No source/entity filters
+9. **Legend always visible** - Takes space, could collapse
+
+---
 
 ## Tech Stack
 
-- **Framework:** Next.js 15 (App Router)
+- **Framework:** Next.js 16 (App Router)
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Graph Visualization:** D3.js
+- **Styling:** Tailwind CSS + CSS Variables
+- **Graph:** D3.js (force simulation)
 - **Database:** Supabase (PostgreSQL)
 - **Hosting:** Vercel
 - **Icons:** Lucide React
 
+---
+
 ## Getting Started
 
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- Supabase account (free tier works)
-
-### Installation
-
-1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/stablecoin-explorer.git
-cd stablecoin-explorer
-```
-
-2. Install dependencies:
-```bash
+# Install
 npm install
-```
 
-3. Set up Supabase:
-   - Create a new project at [supabase.com](https://supabase.com)
-   - Run the schema in `supabase-schema.sql` via the SQL Editor
-   - Copy your project URL and keys
-
-4. Create `.env.local`:
-```bash
+# Environment
 cp .env.local.example .env.local
-```
+# Fill in Supabase credentials
 
-5. Fill in your environment variables:
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-CRON_SECRET=your-random-secret
-```
-
-6. Seed the database:
-```bash
-npx tsx scripts/seed-database.ts
-```
-
-7. Start the development server:
-```bash
+# Run
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app.
+Open [http://localhost:3000](http://localhost:3000)
 
-## Project Structure
+---
 
-```
-src/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   │   └── news/          # News fetch endpoints
-│   ├── entities/          # Entity list page
-│   ├── network/           # D3.js network graph
-│   ├── news/              # News feed page
-│   ├── timeline/          # Timeline page
-│   └── page.tsx           # Dashboard
-├── components/            # React components
-│   ├── Navigation.tsx     # Sidebar navigation
-│   └── NewsFeed.tsx       # News feed component
-├── data/
-│   └── entities.ts        # Entity data and helpers
-├── lib/
-│   ├── news/              # News fetching utilities
-│   │   ├── rss-feeds.ts   # RSS parser
-│   │   ├── currents-api.ts # Currents API client
-│   │   └── entity-matcher.ts # Entity detection
-│   └── supabase.ts        # Supabase client
-└── types/                 # TypeScript types
-    ├── index.ts           # App types
-    └── database.ts        # Database types
-```
+## Entity Counts
 
-## Entity Types
+| Type | Count | Examples |
+|------|-------|----------|
+| Person | 27 | Larry Fink, Elon Musk, Michael Saylor |
+| Organization | 27 | BlackRock, Coinbase Custody, Tesla |
+| Stablecoin | 5 | USDT, USDC, DAI, BUSD, PYUSD |
+| Government | 6 | SEC, FBI, US Treasury |
+| Concept | 10 | Self-Custody, BTC Custody Concentration |
+| Event | 6 | BTC ETF Approval, FTX Collapse |
+| **Total** | **81** | |
 
-| Type | Color | Description |
-|------|-------|-------------|
-| Person | Green | Key individuals in the ecosystem |
-| Organization | Purple | Companies, exchanges, analytics firms |
-| Stablecoin | Blue | USDT, USDC, DAI, BUSD, PYUSD |
-| Government | Red | Regulatory bodies and agencies |
-| Concept | Orange | Ideas like CBDC, Dollar Hegemony |
-| Event | Yellow | Historical events like FTX Collapse |
-
-## Fetching News
-
-The news feed pulls from RSS sources and can optionally use the Currents API.
-
-**Manual fetch:**
-```bash
-curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
-  https://stablecoin-explorer.vercel.app/api/news/fetch
-```
-
-**Set up auto-refresh:** Use Vercel Cron or an external service to call the endpoint hourly.
-
-## Deployment
-
-The app is deployed on Vercel. To deploy your own:
-
-1. Push to GitHub
-2. Import to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy
-
-## Key Thesis
-
-This explorer is built around three core observations:
-
-1. **Private CBDCs:** Stablecoins have the same surveillance and control capabilities as government CBDCs, but with less oversight.
-
-2. **Dollar Extension:** Stablecoins extend US dollar hegemony globally by creating new demand for Treasury bills.
-
-3. **Financial Surveillance:** Every stablecoin transaction is tracked. Issuers can freeze funds, and law enforcement has direct access to issuer systems.
-
-## Contributing
-
-Contributions are welcome! Areas for improvement:
-
-- Add more entities and connections
-- Improve entity matching for news
-- Add more timeline events
-- Enhance the network graph visualization
-- Add data export features
+---
 
 ## License
 
 MIT
-
-## Acknowledgments
-
-- Research sources: Simon Dixon interviews, Congressional hearings, Mark Goodwin analysis
-- Inspiration: [Epstein Secrets](https://epsteinsecrets.com) network visualization

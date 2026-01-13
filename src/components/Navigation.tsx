@@ -2,16 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Network, Users, Clock, Newspaper, BarChart3, Info } from 'lucide-react';
+import { Network, Users, Clock, BarChart3, Info } from 'lucide-react';
 import { EDGE_COLORS, EDGE_LABELS, ALL_EDGE_TYPES } from '@/lib/data';
 import GlobalSearch from './GlobalSearch';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/network', label: 'Network', icon: Network },
   { href: '/entities', label: 'People & Entities', icon: Users },
   { href: '/timeline', label: 'Timeline', icon: Clock },
-  { href: '/news', label: 'News Feed', icon: Newspaper },
   { href: '/metrics', label: 'Metrics', icon: BarChart3 },
   { href: '/about', label: 'About', icon: Info },
 ];
@@ -22,13 +20,13 @@ export default function Navigation() {
   return (
     <nav className="fixed left-0 top-0 h-screen w-64 bg-[var(--bg-secondary)] border-r border-[var(--border)] flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-[var(--border)]">
+      <Link href="/network" className="block p-6 border-b border-[var(--border)] hover:bg-[var(--bg-tertiary)] transition-colors">
         <h1 className="text-lg font-bold text-[var(--text-primary)] leading-tight">
           Centralization
         </h1>
         <p className="text-sm text-[var(--accent)] font-medium">Observatory</p>
         <p className="text-xs text-[var(--text-muted)] mt-1">Bitcoin + Stablecoins</p>
-      </div>
+      </Link>
 
       {/* Global Search */}
       <div className="p-4">

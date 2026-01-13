@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { entities, classifyEdgeType } from '@/data/entities';
 import { EntityType } from '@/types';
-import { Search, ChevronRight, ExternalLink, X } from 'lucide-react';
+import { Search, ChevronRight, ExternalLink, X, Newspaper } from 'lucide-react';
 import { EDGE_COLORS, EDGE_LABELS } from '@/lib/data';
 import { getDecentralizationColor, getDecentralizationLabel, getDefaultScore } from '@/lib/scoring';
 import EntityDetailModal from '@/components/EntityDetailModal';
@@ -102,8 +102,17 @@ function EntitiesContent() {
   const [filterType, setFilterType] = useState<EntityType | 'all'>('all');
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
   const [modalEntity, setModalEntity] = useState<string | null>(null);
+  const [newsCounts, setNewsCounts] = useState<Record<string, number>>({});
 
   const debouncedSearch = useDebounce(search, 300);
+
+  // Fetch news counts for entities
+  useEffect(() => {
+    fetch('/api/news/counts')
+      .then(res => res.json())
+      .then(data => setNewsCounts(data.counts || {}))
+      .catch(() => setNewsCounts({}));
+  }, []);
 
   // Initialize from URL params
   useEffect(() => {
@@ -229,8 +238,14 @@ function EntitiesContent() {
                 <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mt-1">
                   <HighlightText text={entity.description} query={debouncedSearch} />
                 </p>
-                <div className="text-xs text-[var(--text-muted)] mt-2">
-                  {entity.connections.length} connections
+                <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] mt-2">
+                  <span>{entity.connections.length} connections</span>
+                  {newsCounts[entity.id] > 0 && (
+                    <span className="flex items-center gap-1 text-[var(--accent)]" title={`${newsCounts[entity.id]} news article${newsCounts[entity.id] !== 1 ? 's' : ''}`}>
+                      <Newspaper size={12} />
+                      {newsCounts[entity.id]}
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -286,9 +301,23 @@ function EntitiesContent() {
               {selectedEntityData.name}
             </h1>
 
-            <p className="text-lg text-[var(--text-secondary)] mb-8">
+            <p className="text-lg text-[var(--text-secondary)] mb-4">
               {selectedEntityData.description}
             </p>
+
+            {/* News indicator */}
+            {newsCounts[selectedEntityData.id] > 0 && (
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--accent)]/10 text-[var(--accent)] rounded-lg text-sm mb-8 cursor-pointer hover:bg-[var(--accent)]/20 transition-colors"
+                onClick={() => setModalEntity(selectedEntity)}
+                title="Click to view news in full details"
+              >
+                <Newspaper size={14} />
+                <span>{newsCounts[selectedEntityData.id]} news article{newsCounts[selectedEntityData.id] !== 1 ? 's' : ''}</span>
+              </div>
+            )}
+
+            {!newsCounts[selectedEntityData.id] && <div className="mb-8" />}
 
             {/* Capture Story */}
             {selectedEntityData.captureStory && (

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Route, ArrowRight, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, Route, ArrowRight, Loader2, TrendingUp } from 'lucide-react';
 import { findShortestPath, PathResult, PathEdge } from '@/lib/graph/pathfinding';
 import { EDGE_COLORS, EDGE_LABELS } from '@/lib/data';
-import type { GraphData, EdgeType } from '@/types';
+import { getDecentralizationColor, getDefaultScore } from '@/lib/scoring';
+import type { GraphData, EdgeType, Entity } from '@/types';
 
 interface CapturePathProps {
   graphData: GraphData;
@@ -12,6 +13,7 @@ interface CapturePathProps {
   onSelectNode: (nodeId: string | null, slot: 0 | 1) => void;
   onPathFound: (pathResult: PathResult | null) => void;
   entityNames: Map<string, string>;
+  entities?: Entity[];
 }
 
 export default function CapturePath({
@@ -20,10 +22,49 @@ export default function CapturePath({
   onSelectNode,
   onPathFound,
   entityNames,
+  entities = [],
 }: CapturePathProps) {
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+
+  // Calculate path metrics
+  const pathMetrics = useMemo(() => {
+    if (!pathResult?.found || entities.length === 0) return null;
+
+    // Calculate average decentralization score
+    const scores = pathResult.path.map(id => {
+      const entity = entities.find(e => e.id === id);
+      return entity?.decentralizationScore ?? getDefaultScore(entity?.type || 'concept');
+    });
+    const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+
+    // Determine path strength
+    let strength: string;
+    let strengthColor: string;
+    if (pathResult.distance <= 1) {
+      strength = 'Direct';
+      strengthColor = 'text-green-400';
+    } else if (pathResult.distance <= 2) {
+      strength = 'Strong';
+      strengthColor = 'text-lime-400';
+    } else if (pathResult.distance <= 3) {
+      strength = 'Moderate';
+      strengthColor = 'text-yellow-400';
+    } else {
+      strength = 'Weak';
+      strengthColor = 'text-red-400';
+    }
+
+    // Determine centralization level
+    let centralizationLevel: string;
+    if (avgScore >= 60) centralizationLevel = 'Low';
+    else if (avgScore >= 40) centralizationLevel = 'Mixed';
+    else if (avgScore >= 20) centralizationLevel = 'High';
+    else centralizationLevel = 'Very High';
+
+    return { avgScore, strength, strengthColor, centralizationLevel };
+  }, [pathResult, entities]);
 
   // Calculate path when both nodes are selected
   useEffect(() => {
@@ -55,7 +96,7 @@ export default function CapturePath({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="absolute top-4 left-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-2 flex items-center gap-2 hover:bg-[var(--bg-tertiary)] transition-colors shadow-lg"
+        className="absolute bottom-4 left-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-2 flex items-center gap-2 hover:bg-[var(--bg-tertiary)] transition-colors shadow-lg"
       >
         <Route size={16} className="text-[var(--accent)]" />
         <span className="text-sm text-[var(--text-primary)]">Capture Path</span>
@@ -64,7 +105,7 @@ export default function CapturePath({
   }
 
   return (
-    <div className="absolute top-4 left-4 w-80 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden">
+    <div className="absolute bottom-4 left-4 w-80 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden max-h-[80vh] overflow-y-auto">
       {/* Header */}
       <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -150,11 +191,33 @@ export default function CapturePath({
             <>
               {/* Path Info */}
               <div className="p-4 bg-green-500/10 border-b border-[var(--border)]">
-                <div className="flex items-center gap-2 text-green-500">
-                  <span className="text-sm font-medium">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-green-500">
                     Path found! {pathResult.distance} hop{pathResult.distance !== 1 ? 's' : ''}
                   </span>
+                  {pathMetrics && (
+                    <span className={`text-xs font-medium ${pathMetrics.strengthColor}`}>
+                      {pathMetrics.strength} connection
+                    </span>
+                  )}
                 </div>
+                {pathMetrics && (
+                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-green-500/20">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: getDecentralizationColor(pathMetrics.avgScore) }}
+                      />
+                      <span className="text-xs text-[var(--text-secondary)]">
+                        Avg score: <span className="font-medium" style={{ color: getDecentralizationColor(pathMetrics.avgScore) }}>{pathMetrics.avgScore}/100</span>
+                      </span>
+                    </div>
+                    <span className="text-xs text-[var(--text-muted)]">•</span>
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      Path centralization: <span className={pathMetrics.avgScore < 40 ? 'text-red-400' : pathMetrics.avgScore < 60 ? 'text-yellow-400' : 'text-green-400'}>{pathMetrics.centralizationLevel}</span>
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Path Visualization */}
