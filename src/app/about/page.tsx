@@ -453,7 +453,7 @@ export default function AboutPage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <a
-                href="https://github.com"
+                href="https://github.com/yourusername/centralization-observatory"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition-colors"
@@ -462,7 +462,7 @@ export default function AboutPage() {
                 View Source
               </a>
               <a
-                href="mailto:feedback@example.com"
+                href="mailto:feedback@centralization.observatory"
                 className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)] transition-colors"
               >
                 <Mail size={16} />

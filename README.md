@@ -1,446 +1,408 @@
 # Centralization Observatory
 
-Track the centralization of crypto: Bitcoin ETFs, stablecoin custody, and institutional capture.
+**Track the centralization of crypto: Bitcoin ETFs, stablecoin custody, and institutional capture.**
 
-**Live:** [stablecoin-explorer.vercel.app](https://stablecoin-explorer.vercel.app)
+An interactive research tool that maps the network of people, companies, and governments shaping Bitcoin and stablecoins. Each entity is assigned a decentralization score from 0 (centralized) to 100 (decentralized), revealing how power is actually distributed in crypto.
 
----
-
-## UX Overview
-
-### Navigation (Sidebar)
-
-**Current state:**
-- Fixed 264px sidebar on all pages
-- Logo: "Centralization Observatory" with "Bitcoin + Stablecoins" tagline
-- Search input (currently non-functional placeholder)
-- 7 nav items: Dashboard, Network, People & Entities, Timeline, News Feed, Metrics, About
-- Legend section showing Entity Types (6 colors) and Edge Types (7 colors)
-
-**Interaction:**
-- Active page highlighted with accent color
-- Hover states on nav items
-- Legend is scrollable if content overflows
-
-**UX considerations:**
-- Search is a placeholder - needs implementation
-- Legend takes significant vertical space - could be collapsible
-- Mobile responsiveness not implemented (sidebar is fixed width)
+**Live Demo:** [stablecoin-explorer.vercel.app](https://stablecoin-explorer.vercel.app)
 
 ---
 
-## Pages
+## Table of Contents
 
-### 1. Dashboard (`/`)
-
-**Purpose:** Overview of the entire dataset with key statistics and thesis.
-
-**Layout:**
-```
-┌─────────────────────────────────────────────┐
-│  Heading + Description                      │
-├──────────┬──────────┬──────────┬───────────┤
-│ Entities │ Connect. │ Timeline │ Stables   │  ← 4 stat cards
-├──────────┴──────────┴──────────┴───────────┤
-│ Entities by Type    │ Recent Events        │  ← 2 columns
-├─────────────────────┴──────────────────────┤
-│ Key Thesis (3 cards)                       │
-└─────────────────────────────────────────────┘
-```
-
-**Current UX:**
-- Static data display, no interactions beyond viewing
-- Recent events list shows 5 most recent (sorted by date)
-- Entity type breakdown uses color dots matching the legend
-- Thesis cards explain the core narrative
-
-**UX considerations:**
-- Stat cards could link to relevant pages (click "Entities" → go to /entities)
-- Recent events could be clickable to navigate to timeline or entity
-- No loading states (data is static)
-- Thesis cards are text-only - could have expandable details
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [The Problem](#the-problem)
+- [Pages Overview](#pages-overview)
+- [Decentralization Scoring](#decentralization-scoring)
+- [Tech Stack](#tech-stack)
+- [Data Model](#data-model)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [API Routes](#api-routes)
+- [Methodology](#methodology)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-### 2. Network Graph (`/network`)
+## Features
 
-**Purpose:** Interactive visualization of all entity connections.
+### Interactive Network Graph
+- **Force-directed D3.js visualization** with 82+ entities and 245+ connections
+- **Score-based node coloring** - red (centralized) to green (decentralized) gradient
+- **7 edge type filters** - Ownership, Partnership, Regulatory, Funding, Board/Executive, Custody, Other
+- **Entity type filters** - People, Organizations, Stablecoins, Government, Concepts, Events
+- **Zoom and pan controls** with mouse wheel and drag
+- **Node interactions:**
+  - Hover: Tooltip with entity name, type, score, and connection count
+  - Click: Ego network highlighting (dims unrelated nodes/edges)
+  - Double-click: Opens full entity detail modal
+  - Drag: Reposition nodes in the force simulation
+- **In-graph search** - Find and zoom to any entity with animated camera movement
+- **Reset view button** - Return to default zoom and clear selections
+- **Mobile warning banner** - Alerts users that desktop provides better experience
+- **Loading state** - Spinner while graph simulation initializes
 
-**Layout:**
-```
-┌─────────────────────────────────────────────┐
-│ Header: Title + Entity Type Dropdown        │
-├─────────────────────────────────────────────┤
-│ Edge Type Filter Buttons (All, Ownership,   │
-│ Partnership, Regulatory, Funding, etc.)     │
-├─────────────────────────────────────────────┤
-│                                             │
-│         D3.js Force-Directed Graph          │
-│                                             │
-│   [Capture Path Panel]   [Selected Node]    │
-│                                             │
-├─────────────────────────────────────────────┤
-│ Instructions: Drag to pan • Scroll to zoom  │
-└─────────────────────────────────────────────┘
-```
+### Capture Path Tool
+- **Pathfinding between any two entities** - Find the shortest connection path
+- **Visual path highlighting** - Dramatically dims non-path nodes/edges
+- **Path metrics:**
+  - Hop count (distance)
+  - Connection strength rating (Direct, Strong, Moderate, Weak)
+  - Average decentralization score along path
+  - Path centralization level
+- **Step-by-step path visualization** showing each entity and relationship
 
-**Interactions:**
-1. **Pan/Zoom:** Scroll to zoom, drag background to pan
-2. **Node drag:** Drag individual nodes to reposition
-3. **Node click:**
-   - If Capture Path mode: Select as path endpoint
-   - Otherwise: Open side panel with entity details
-4. **Node hover:** Highlight with white border
-5. **Entity Type Filter:** Dropdown filters nodes by type
-6. **Edge Type Filter:** Buttons filter connections by relationship type
-7. **Capture Path:** Click button to open panel, then click two nodes to find shortest path
+### Global Search
+- **Keyboard shortcut** - Press `/` to focus search from anywhere
+- **Real-time filtering** with highlighted matching text
+- **Smart sorting** - Name matches first, then by centralization score (most centralized first)
+- **Keyboard navigation** - Arrow keys to navigate, Enter to select, Escape to close
+- **Cross-page navigation** - Results link directly to entity detail pages
 
-**Capture Path Panel:**
-- Collapsible (button toggles open/closed)
-- Shows slots for 2 nodes (green "1", blue "2")
-- After selecting both: Shows path result with hop count
-- Path visualization lists each node and edge relationship
-- "Clear Selection" button resets
+### Entity Database
+- **Searchable and filterable entity list** with 82+ tracked entities
+- **Split-panel interface** - List on left, details on right
+- **Deep linking support** - Share URLs like `/entities?entity=blackrock`
+- **Entity cards show:**
+  - Decentralization score with color indicator
+  - Entity type
+  - Description preview
+  - Connection count
+  - News article count (when available)
+- **Full detail modal** with 4 tabs:
+  - **Story** - Centralization narrative for the entity
+  - **Connections** - All relationships with edge type badges
+  - **News** - Live news feed filtered to this entity
+  - **Sources** - Citations and documentation links
+- **Debounced search** for smooth performance
 
-**Selected Node Panel:**
-- Appears top-right when node clicked (outside Capture Path mode)
-- Shows: Type badge, name, description
-- Lists all connections with relationship text
-- Click connection to navigate to that entity
+### Metrics Dashboard
+- **4 Key Performance Indicators:**
+  - Average Centralization Score (0-100)
+  - Custody Concentration (% held by top 5 custodians)
+  - Regulatory Capture Index (0-10 scale)
+  - Network Centralization Level (Low/Medium/High)
+- **Interactive tooltips** explaining each metric's methodology
+- **Decentralization Distribution Chart** - Bar chart showing entity count by score range
+- **Connection Type Breakdown** - Visual breakdown of all 245+ connections by type
+- **Top 10 Most Centralized Entities** - Ranked list with direct links
+- **Top 10 Most Decentralized Entities** - Ranked list with direct links
+- **Regulatory Capture Detail:**
+  - Gauge visualization
+  - Government entity count
+  - Regulatory connection count
+  - Government-connected entity count
+- **Network Hubs** - Top 5 most connected entities
+- **Entity Type Breakdown** - Count and average score by type
+- **Methodology & Data Sources** section with limitations
 
-**UX considerations:**
-- Graph can be overwhelming with 81 nodes - initial zoom/layout matters
-- No way to search/find a specific node from the graph page
-- Path highlighting dims other nodes but graph stays busy
-- Mobile experience is poor (drag conflicts with scroll)
-- No "reset view" button to return to default zoom/position
-- Selected panel and Capture Path can't be open simultaneously
-- Edge colors are visible but legend is in sidebar (not on graph)
+### Timeline
+- **Chronological event list** with 15+ key events
+- **Vertical timeline design** with connected dots
+- **Event cards include:**
+  - Formatted date
+  - Title and description
+  - Related entity tags with type-colored dots
+  - Source links when available
+- **Click to select/highlight events**
+- **Date range displayed** in footer
 
----
+### About Page
+- **Thesis explanation** - Why decentralization matters
+- **Evidence of centralization** with specific examples
+- **Visual score examples** showing entities across the spectrum
+- **Full methodology documentation:**
+  - Data sources (SEC EDGAR, on-chain analytics, news, etc.)
+  - Connection type definitions with color legend
+  - Limitations and biases
+- **Researcher use cases** - Journalists, policy makers, investors, academics
+- **How to cite** section
 
-### 3. People & Entities (`/entities`)
-
-**Purpose:** Searchable/filterable list with detail view.
-
-**Layout:**
-```
-┌──────────────────┬──────────────────────────┐
-│ Search + Filters │                          │
-├──────────────────┤                          │
-│                  │     Entity Detail        │
-│   Entity List    │     (right panel)        │
-│   (scrollable)   │                          │
-│                  │                          │
-├──────────────────┤                          │
-│ X of Y entities  │                          │
-└──────────────────┴──────────────────────────┘
-```
-
-**Left Panel (List):**
-- Search input (filters by name and description)
-- Filter buttons for each entity type
-- Scrollable list of entity cards
-- Each card shows: type dot, type label, name, description (truncated), connection count
-- Click card to select and view details
-- Footer shows "X of Y entities"
-
-**Right Panel (Detail):**
-- Empty state: "Select an entity to view details"
-- Selected state:
-  - Type badge + "Full Details" button
-  - Large entity name
-  - Full description
-  - Connections list with edge type badges
-  - Click connection to navigate to that entity
-
-**Full Details Modal:**
-- Triggered by "Full Details" button
-- 4 tabs: Story, Connections, News, Sources
-- **Story tab:** Capture narrative (most entities show "No capture story available")
-- **Connections tab:** Same as panel but with more detail
-- **News tab:** Filtered news feed for this entity
-- **Sources tab:** Citation links (most show "No sources documented")
-
-**Interactions:**
-- Type text in search → instant filter
-- Click type button → toggle filter
-- Click entity → loads in right panel
-- Click "Full Details" → opens modal
-- Click connection → navigates to that entity (panel updates or modal navigates)
-- Press Escape → closes modal
-
-**UX considerations:**
-- Search works but no keyboard shortcut to focus it
-- Can't combine type filters (e.g., show People AND Organizations)
-- Modal "Story" and "Sources" tabs are mostly empty - could hide if empty
-- News tab in modal loads separately (shows loading spinner)
-- No way to return to list from modal without closing modal
-- Connection click in modal changes the modal content (jarring)
+### Responsive Design
+- **Collapsible sidebar navigation** - Full width on desktop, icon-only on mobile
+- **Mobile-optimized layouts** across all pages
+- **Footer** with source links, credits, and legal disclaimer
 
 ---
 
-### 4. Timeline (`/timeline`)
+## The Problem
 
-**Purpose:** Chronological view of key events.
+Bitcoin was created to eliminate trusted third parties. Decentralization provides financial sovereignty, censorship resistance, and trust minimization. Without it, crypto is just a slower database controlled by the same institutions it claimed to replace.
 
-**Layout:**
-```
-┌─────────────────────────────────────────────┐
-│ Header: Title + Description                 │
-├─────────────────────────────────────────────┤
-│                                             │
-│  2024 ──●── Event Card                      │
-│         │                                   │
-│         ●── Event Card                      │
-│         │                                   │
-│  2023 ──●── Event Card                      │
-│         │                                   │
-│  ...                                        │
-│                                             │
-└─────────────────────────────────────────────┘
-```
+**Evidence of centralization this tool tracks:**
 
-**Current UX:**
-- Vertical timeline with year markers
-- Each event shows: date, title, description
-- Entity tags linking to related entities (clickable)
-- Events sorted newest first (2024 at top)
-- 15 events total (8 stablecoin, 7 Bitcoin-related)
-
-**Interactions:**
-- Click entity tag → navigates to /entities with that entity selected
-
-**UX considerations:**
-- No filtering by category (Bitcoin vs Stablecoin events)
-- No filtering by date range
-- No search
-- Entity tags click behavior: goes to entities page, but doesn't show modal
-- Could benefit from horizontal timeline option for overview
-- Events are static - no expand/collapse for more detail
+| Issue | Details |
+|-------|---------|
+| ETF Custody Concentration | Coinbase custodies 8 of 11 Bitcoin ETFs |
+| Stablecoin Duopoly | Tether and Circle control ~90% of stablecoin supply |
+| Self-Custody Decline | Dropped from ~90% to ~30% of holdings |
+| Surveillance Capabilities | FBI and Secret Service have direct access to Tether's systems |
 
 ---
 
-### 5. News Feed (`/news`)
+## Pages Overview
 
-**Purpose:** Live news with entity matching.
-
-**Layout:**
-```
-┌─────────────────────────────────────────────┐
-│ Header: Title + Last Updated + Refresh Btn  │
-├─────────────────────────────────────────────┤
-│                                             │
-│  News Card                                  │
-│  - Source + Time ago                        │
-│  - Title (link)                             │
-│  - Description                              │
-│  - Entity Tags                              │
-│                                             │
-│  News Card...                               │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
-**Current UX:**
-- Pulls from RSS feeds (CoinDesk, Cointelegraph, The Block, Decrypt)
-- Auto-tags entities mentioned in articles
-- Shows relevance badge (High/Medium/Low)
-- External links open in new tab
-- Refresh button to fetch latest
-
-**Interactions:**
-- Click "Refresh" → fetches new articles (shows loading spinner)
-- Click article title → opens external link
-- Click entity tag → navigates to entities page
-
-**UX considerations:**
-- No filtering by source
-- No filtering by entity
-- No search
-- No infinite scroll (shows limited articles)
-- Entity matching can be imprecise (false positives)
-- "Last updated" shows time, not how fresh the data is
+| Page | Route | Purpose |
+|------|-------|---------|
+| Network Graph | `/network` | Interactive visualization of entity relationships |
+| Entities | `/entities` | Searchable database with detail panels |
+| Timeline | `/timeline` | Chronological key events |
+| Metrics | `/metrics` | Centralization analytics dashboard |
+| About | `/about` | Thesis, methodology, and documentation |
 
 ---
 
-### 6. Metrics (`/metrics`)
+## Decentralization Scoring
 
-**Purpose:** Centralization metrics dashboard.
+Each entity receives a score from 0-100 based on control factors:
 
-**Layout:**
-```
-┌─────────────────────────────────────────────┐
-│ Header: Title + Last Updated + Refresh      │
-├──────────┬──────────┬──────────┬───────────┤
-│ Stable   │ BTC in   │ Corp BTC │ Self-     │  ← 4 KPI cards
-│ Supply   │ ETFs     │ Holdings │ Custody   │
-├──────────┴──────────┼──────────┴───────────┤
-│ Stablecoin Market   │ BTC ETF Custody      │
-│ Share (bar chart)   │ Concentration        │
-├─────────────────────┼──────────────────────┤
-│ Regulatory Capture  │ Corporate BTC        │
-│ Index (gauge)       │ Holdings (list)      │
-├─────────────────────┴──────────────────────┤
-│ Data Sources (links)                       │
-└─────────────────────────────────────────────┘
-```
+| Score Range | Label | Color | Examples |
+|-------------|-------|-------|----------|
+| 0-20 | Highly Centralized | Red | SEC (5), BlackRock (10), Coinbase Custody (15) |
+| 20-40 | Mostly Centralized | Orange | USDT (25), USDC (30), Coinbase (35) |
+| 40-60 | Mixed | Yellow | DAI (45), Michael Saylor (50), Cash App (55) |
+| 60-80 | Mostly Decentralized | Lime | Jack Dorsey (70) |
+| 80-100 | Decentralized | Green | Self-Custody (95), Bitcoin Protocol (100) |
 
-**Visualizations:**
-1. **KPI Cards:** Total Stablecoin Supply, BTC in ETFs, Corporate BTC, Self-Custody Estimate
-2. **Stablecoin Market Share:** Stacked bar with legend (USDT 65%, USDC 21%, etc.)
-3. **BTC ETF Custody:** Stacked bar showing ETF market share
-4. **Regulatory Capture Index:** Gauge visualization (7.2/10)
-5. **Corporate BTC Holdings:** List with company, BTC amount, USD value
-
-**Interactions:**
-- Refresh button (currently simulates refresh with timeout)
-- Hover on bar chart segments shows tooltip with name and percentage
-- Data source links open in new tab
-
-**UX considerations:**
-- Data is placeholder/static - not connected to live APIs
-- Refresh button doesn't actually fetch new data
-- No historical comparison (no "vs last week")
-- Gauge is custom CSS - could be more polished
-- Warning badges (yellow triangles) add narrative but no click action
-- Mobile layout untested
-
----
-
-### 7. About (`/about`)
-
-**Purpose:** Explain thesis, methodology, and data sources.
-
-**Layout:**
-```
-┌─────────────────────────────────────────────┐
-│ Header: Title + Subtitle                    │
-├─────────────────────────────────────────────┤
-│ Our Thesis (warning icon)                   │
-│ - 4 paragraphs explaining centralization    │
-│ - Highlighted callout                       │
-├─────────────────────────────────────────────┤
-│ Methodology (eye icon)                      │
-│ - Centralization Score explanation          │
-│ - Edge Types explanation                    │
-├─────────────────────────────────────────────┤
-│ Data Sources (database icon)               │
-│ - 5 source links with descriptions          │
-├─────────────────────────────────────────────┤
-│ Footer: Disclaimer + GitHub link            │
-└─────────────────────────────────────────────┘
-```
-
-**Interactions:**
-- Data source cards are links (hover state, open external)
-- GitHub link in footer
-
-**UX considerations:**
-- Text-heavy, could benefit from visuals
-- Methodology score ranges could show example entities
-- No anchor links to jump to sections
-- GitHub link goes to generic github.com (needs real repo URL)
-
----
-
-## Component Inventory
-
-| Component | Location | Used On |
-|-----------|----------|---------|
-| `Navigation` | Sidebar | All pages |
-| `NewsFeed` | News list | /news, EntityDetailModal |
-| `EntityDetailModal` | Modal overlay | /entities |
-| `CapturePath` | Floating panel | /network |
-
----
-
-## Data Flow
-
-```
-src/data/entities.ts (81 entities, hardcoded)
-         ↓
-    getGraphData() → Network graph
-    getStats() → Dashboard
-    entities array → Entities page, Timeline
-         ↓
-src/lib/data/index.ts (abstraction layer, edge colors/labels)
-         ↓
-    EDGE_COLORS, EDGE_LABELS → Network, Entities, Navigation
-```
-
-**News Flow:**
-```
-/api/news/fetch → RSS feeds → Supabase (news_items table)
-         ↓
-/api/news → Query Supabase → NewsFeed component
-```
-
----
-
-## Known UX Issues
-
-### High Priority
-1. **Search is non-functional** - Sidebar search does nothing
-2. **Mobile not supported** - Fixed sidebar breaks on small screens
-3. **Metrics data is static** - Refresh button is fake
-
-### Medium Priority
-4. **Graph overwhelming** - 81 nodes with no search/highlight
-5. **Empty modal tabs** - Story/Sources tabs mostly empty
-6. **No entity deep linking** - Can't share URL to specific entity
-
-### Low Priority
-7. **Timeline not filterable** - No category/date filters
-8. **News not filterable** - No source/entity filters
-9. **Legend always visible** - Takes space, could collapse
+**Scoring Factors:**
+- Entity type (government entities start at 5, organizations at 30)
+- Custody arrangements
+- Freeze/blacklist capabilities
+- Regulatory relationships
+- Governance structure
+- Network of connections
 
 ---
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS + CSS Variables
-- **Graph:** D3.js (force simulation)
-- **Database:** Supabase (PostgreSQL)
-- **Hosting:** Vercel
-- **Icons:** Lucide React
+| Technology | Purpose |
+|------------|---------|
+| **Next.js 16** | React framework with App Router |
+| **React 19** | UI library |
+| **TypeScript** | Type safety |
+| **Tailwind CSS 4** | Styling with CSS variables for theming |
+| **D3.js 7** | Force-directed graph visualization |
+| **Supabase** | PostgreSQL database for entities, connections, news |
+| **Lucide React** | Icon library |
+| **Vercel** | Hosting and deployment |
+
+---
+
+## Data Model
+
+### Entities (82+)
+
+| Type | Count | Examples |
+|------|-------|----------|
+| Person | 27 | Larry Fink, Elon Musk, Michael Saylor, Paolo Ardoino |
+| Organization | 27 | BlackRock, Coinbase Custody, Tesla, Circle, Tether Limited |
+| Stablecoin | 5 | USDT, USDC, DAI, BUSD, PYUSD |
+| Government | 6 | SEC, FBI, US Treasury, Federal Reserve, FinCEN, OCC |
+| Concept | 11 | Self-Custody, BTC Custody Concentration, CBDC, Dollar Hegemony |
+| Event | 6 | BTC ETF Approval, FTX Collapse, Tornado Cash Sanctions |
+
+### Connection Types (245+)
+
+| Type | Color | Description |
+|------|-------|-------------|
+| Ownership | Red | Equity stakes, parent companies |
+| Partnership | Green | Business relationships, collaborations |
+| Regulatory | Yellow | Government oversight, compliance |
+| Funding | Blue | Investment, financing |
+| Board/Executive | Purple | Leadership positions, advisory roles |
+| Custody | Orange | Asset storage relationships |
+| Other | Gray | Miscellaneous connections |
+
+### Timeline Events (15+)
+
+Key events from 2022-2025 including:
+- BTC ETF Approval (Jan 2024)
+- FTX Collapse (Nov 2022)
+- Tornado Cash Sanctions (Aug 2022)
+- Congressional Hearings
+- MicroStrategy BTC Accumulation
 
 ---
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Supabase account (for database features)
+
+### Installation
+
 ```bash
-# Install
+# Clone the repository
+git clone https://github.com/tdeu/btc_battleground.git
+cd btc_battleground
+
+# Install dependencies
 npm install
 
-# Environment
+# Set up environment variables
 cp .env.local.example .env.local
-# Fill in Supabase credentials
-
-# Run
-npm run dev
+# Edit .env.local with your Supabase credentials:
+# NEXT_PUBLIC_SUPABASE_URL=your-project-url
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+### Development
+
+```bash
+# Start development server
+npm run dev
+
+# Open http://localhost:3000
+```
+
+### Production Build
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+### Deployment
+
+The app is configured for Vercel deployment:
+
+```bash
+# Deploy to Vercel
+vercel --prod
+```
 
 ---
 
-## Entity Counts
+## Project Structure
 
-| Type | Count | Examples |
-|------|-------|----------|
-| Person | 27 | Larry Fink, Elon Musk, Michael Saylor |
-| Organization | 27 | BlackRock, Coinbase Custody, Tesla |
-| Stablecoin | 5 | USDT, USDC, DAI, BUSD, PYUSD |
-| Government | 6 | SEC, FBI, US Treasury |
-| Concept | 10 | Self-Custody, BTC Custody Concentration |
-| Event | 6 | BTC ETF Approval, FTX Collapse |
-| **Total** | **81** | |
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── layout.tsx         # Root layout with Navigation and Footer
+│   ├── page.tsx           # Home page (redirects to /network)
+│   ├── network/
+│   │   └── page.tsx       # Network graph visualization
+│   ├── entities/
+│   │   └── page.tsx       # Entity database with search
+│   ├── timeline/
+│   │   └── page.tsx       # Chronological events
+│   ├── metrics/
+│   │   └── page.tsx       # Analytics dashboard
+│   ├── about/
+│   │   └── page.tsx       # Methodology and documentation
+│   └── api/
+│       └── news/          # News feed API routes
+├── components/
+│   ├── Navigation.tsx     # Sidebar with legend (responsive)
+│   ├── Footer.tsx         # Site footer with links
+│   ├── GlobalSearch.tsx   # Cross-site search component
+│   ├── CapturePath.tsx    # Pathfinding panel
+│   ├── EntityDetailModal.tsx # Full entity modal with tabs
+│   ├── NewsFeed.tsx       # News article list
+│   └── ScoreBadge.tsx     # Decentralization score display
+├── lib/
+│   ├── data/
+│   │   └── index.ts       # Data abstraction layer (Supabase/hardcoded)
+│   ├── graph/
+│   │   └── pathfinding.ts # BFS shortest path algorithm
+│   ├── metrics.ts         # Centralization metrics calculations
+│   ├── scoring.ts         # Decentralization score utilities
+│   └── supabase.ts        # Database client
+├── data/
+│   └── entities.ts        # Hardcoded entity and connection data
+└── types/
+    └── index.ts           # TypeScript type definitions
+```
+
+---
+
+## API Routes
+
+### `/api/news`
+Fetches news articles from Supabase, optionally filtered by entity.
+
+### `/api/news/counts`
+Returns count of news articles per entity ID.
+
+### `/api/news/fetch`
+Triggers RSS feed fetch and entity matching (admin use).
+
+---
+
+## Methodology
+
+### Data Sources
+- SEC EDGAR filings
+- On-chain analytics
+- Corporate disclosures
+- News reports and interviews
+- Congressional testimony
+- Transparency reports
+
+### Scoring Methodology
+
+Decentralization scores are assigned based on:
+1. **Entity type baseline** - Government (5), Organizations (30), People (40), Concepts (50)
+2. **Control factors** - Can they freeze assets? Censor transactions? Surveil users?
+3. **Governance** - Single point of control vs. distributed decision-making
+4. **Regulatory capture** - Government connections and compliance requirements
+5. **Custody arrangements** - Self-custody vs. third-party custody
+
+### Limitations
+- Data is imperfect and may contain inaccuracies
+- Scores are interpretive and reflect our methodology
+- Bias toward US-based entities due to data availability
+- Private arrangements may not be fully captured
+- Updated periodically, not real-time
+
+---
+
+## How to Cite
+
+```
+Centralization Observatory. (2025). Bitcoin and Stablecoin Decentralization Tracker.
+Retrieved from https://stablecoin-explorer.vercel.app
+```
+
+---
+
+## Contributing
+
+Contributions are welcome! Areas where help is needed:
+
+- **Data additions** - New entities, connections, or events
+- **Score refinements** - Better methodology for decentralization scoring
+- **International coverage** - Entities beyond US focus
+- **Feature requests** - Open an issue to discuss
+
+### Development Guidelines
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run `npm run build` to verify no errors
+5. Submit a pull request
 
 ---
 
 ## License
 
-MIT
+MIT License - See [LICENSE](LICENSE) for details.
+
+---
+
+## Disclaimer
+
+Data is aggregated from public sources and may contain inaccuracies. Decentralization scores are interpretive and reflect our methodology. This is a research tool for educational purposes, not financial advice. Do your own research.
+
+---
+
+**Built with Next.js, Supabase, and D3.js**

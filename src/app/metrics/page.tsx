@@ -293,7 +293,7 @@ export default function MetricsPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-xs text-[var(--text-muted)]">
+          <div className="text-xs text-[var(--text-muted)]" suppressHydrationWarning>
             Calculated: {lastUpdated.toLocaleTimeString()}
           </div>
           <button
@@ -559,7 +559,7 @@ export default function MetricsPage() {
           </div>
         </div>
         <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between">
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-[var(--text-muted)]" suppressHydrationWarning>
             Last calculated: {new Date(metrics.lastCalculated).toLocaleString()}
           </span>
           <Link

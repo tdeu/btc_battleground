@@ -189,6 +189,7 @@ export async function getGraphData(): Promise<GraphData> {
     name: e.name,
     type: e.type as EntityType,
     connections: connectionsArr.filter(c => c.source_id === e.id || c.target_id === e.id).length,
+    threatLevel: e.threat_level,
   }));
 
   const links: GraphLink[] = connectionsArr.map(c => ({

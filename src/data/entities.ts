@@ -83,7 +83,7 @@ export const entities: Entity[] = [
     decentralizationScore: 25,
     connections: [
       { targetId: 'paxos', targetName: 'Paxos', relationship: 'issued by' },
-      { targetId: 'charles-cascarilla', targetName: 'Charles Cascarilla', relationship: 'Paxos CEO' },
+      { targetId: 'programmable-money', targetName: 'Programmable Money', relationship: 'can freeze/blacklist' },
     ],
   },
 
@@ -96,8 +96,6 @@ export const entities: Entity[] = [
     decentralizationScore: 20,
     connections: [
       { targetId: 'usdt', targetName: 'USDT (Tether)', relationship: 'issues' },
-      { targetId: 'paolo-ardoino', targetName: 'Paolo Ardoino', relationship: 'CTO' },
-      { targetId: 'giancarlo-devasini', targetName: 'Giancarlo Devasini', relationship: 'CFO' },
       { targetId: 'cantor-fitzgerald', targetName: 'Cantor Fitzgerald', relationship: 'treasury custodian' },
       { targetId: 'fbi', targetName: 'FBI', relationship: 'onboarded directly' },
     ],
@@ -110,7 +108,6 @@ export const entities: Entity[] = [
     decentralizationScore: 25,
     connections: [
       { targetId: 'usdc', targetName: 'USDC', relationship: 'issues' },
-      { targetId: 'jeremy-allaire', targetName: 'Jeremy Allaire', relationship: 'CEO' },
       { targetId: 'blackrock', targetName: 'BlackRock', relationship: 'investor' },
       { targetId: 'coinbase', targetName: 'Coinbase', relationship: 'co-creator' },
       { targetId: 'us-treasury', targetName: 'US Treasury', relationship: 'direct partnership' },
@@ -123,10 +120,9 @@ export const entities: Entity[] = [
     description: 'Regulated stablecoin issuer. White-label model.',
     decentralizationScore: 25,
     connections: [
-      { targetId: 'charles-cascarilla', targetName: 'Charles Cascarilla', relationship: 'CEO' },
       { targetId: 'pyusd', targetName: 'PYUSD', relationship: 'issues for PayPal' },
       { targetId: 'busd', targetName: 'BUSD', relationship: 'issued (discontinued)' },
-      { targetId: 'peter-thiel', targetName: 'Peter Thiel', relationship: 'investor' },
+      { targetId: 'congressional-hearing', targetName: 'Congressional Hearing (March 2025)', relationship: 'testified at' },
     ],
   },
   {
@@ -136,10 +132,9 @@ export const entities: Entity[] = [
     description: 'Financial services firm. Primary custodian for Tether reserves.',
     decentralizationScore: 15,
     connections: [
-      { targetId: 'howard-lutnick', targetName: 'Howard Lutnick', relationship: 'CEO' },
       { targetId: 'tether-limited', targetName: 'Tether Limited', relationship: 'holds their treasury' },
       { targetId: 'usdt', targetName: 'USDT (Tether)', relationship: 'custodies backing' },
-      { targetId: 'donald-trump', targetName: 'Donald Trump', relationship: 'Lutnick in cabinet' },
+      { targetId: 'us-treasury', targetName: 'US Treasury', relationship: 'government connections' },
     ],
   },
   {
@@ -149,14 +144,35 @@ export const entities: Entity[] = [
     description: "World's largest asset manager. ~$12 trillion AUM.",
     category: 'both',
     decentralizationScore: 10,
+    threatLevel: 5,
     captureStory: 'BlackRock represents the apex of financial centralization. With ~$12 trillion AUM, they are the largest investor in most major corporations. Their IBIT Bitcoin ETF quickly became the largest, and their USDC investment ties them to stablecoins. When BlackRock speaks, markets move. Their embrace of crypto signals not decentralization, but the absorption of crypto into traditional finance.',
+    metadata: {
+      founded: '1988',
+      headquarters: 'New York, USA',
+      aum: '$11.5 trillion (2024)',
+      keyPeople: [
+        { name: 'Larry Fink', role: 'CEO & Chairman' },
+        { name: 'Robert Kapito', role: 'President' },
+      ],
+      socials: {
+        website: 'https://www.blackrock.com',
+        twitter: 'https://twitter.com/BlackRock',
+        linkedin: 'https://www.linkedin.com/company/blackrock',
+      },
+      regulatoryStatus: 'SEC registered investment advisor',
+      fundingHistory: [
+        { round: 'IPO', date: '1999', amount: '$126M' },
+      ],
+      recentNewsSummary: 'BlackRock\'s IBIT Bitcoin ETF has become the largest spot Bitcoin ETF with over $50B in AUM. The firm continues to push for crypto adoption among institutional investors.',
+      lastUpdated: '2025-01',
+    },
     connections: [
-      { targetId: 'larry-fink', targetName: 'Larry Fink', relationship: 'CEO' },
-      { targetId: 'circle', targetName: 'Circle', relationship: 'major investor' },
-      { targetId: 'us-treasury', targetName: 'US Treasury', relationship: 'advisory role' },
-      { targetId: 'federal-reserve', targetName: 'Federal Reserve', relationship: 'crisis manager' },
-      { targetId: 'ibit', targetName: 'iShares Bitcoin Trust (IBIT)', relationship: 'issues' },
-      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'uses for IBIT custody' },
+      { targetId: 'circle', targetName: 'Circle', relationship: 'major investor', context: 'Strategic investment ties BlackRock to USDC stablecoin ecosystem' },
+      { targetId: 'us-treasury', targetName: 'US Treasury', relationship: 'advisory role', context: 'BlackRock advises Treasury on crisis management, giving it policy influence' },
+      { targetId: 'federal-reserve', targetName: 'Federal Reserve', relationship: 'crisis manager', context: 'Managed Fed bond purchases during 2020 crisis - unprecedented private sector role' },
+      { targetId: 'ibit', targetName: 'iShares Bitcoin Trust (IBIT)', relationship: 'issues', context: 'Largest Bitcoin ETF concentrates BTC ownership in traditional finance' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'uses for IBIT custody', context: 'Single custodian creates concentration risk for $50B+ in BTC' },
+      { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'central node' },
     ],
   },
   {
@@ -166,22 +182,45 @@ export const entities: Entity[] = [
     description: 'Largest US bank.',
     decentralizationScore: 10,
     connections: [
-      { targetId: 'jamie-dimon', targetName: 'Jamie Dimon', relationship: 'CEO' },
       { targetId: 'federal-reserve', targetName: 'Federal Reserve', relationship: 'primary dealer' },
       { targetId: 'blackrock', targetName: 'BlackRock', relationship: 'intertwined' },
+      { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'core member' },
     ],
   },
   {
     id: 'coinbase',
     name: 'Coinbase',
     type: 'organization',
-    description: 'Largest US crypto exchange.',
+    description: 'Largest US crypto exchange and primary custodian for Bitcoin ETFs.',
     decentralizationScore: 35,
+    threatLevel: 4,
+    captureStory: 'Coinbase has become the dominant custodian for institutional Bitcoin holdings. Their Coinbase Custody subsidiary holds BTC for most major ETFs including BlackRock\'s IBIT, creating a massive single point of failure. While they enabled millions to buy crypto, their deep regulatory ties and surveillance partnerships make them a key vector for government control of the space.',
+    metadata: {
+      founded: '2012',
+      headquarters: 'San Francisco, USA (remote-first)',
+      aum: '$280+ billion in assets on platform',
+      keyPeople: [
+        { name: 'Brian Armstrong', role: 'CEO & Co-founder' },
+        { name: 'Emilie Choi', role: 'President & COO' },
+      ],
+      socials: {
+        website: 'https://www.coinbase.com',
+        twitter: 'https://twitter.com/coinbase',
+        linkedin: 'https://www.linkedin.com/company/coinbase',
+      },
+      regulatoryStatus: 'Publicly traded (NASDAQ: COIN), Multiple state licenses',
+      fundingHistory: [
+        { round: 'Series E', date: '2018', amount: '$300M' },
+        { round: 'IPO', date: 'April 2021', amount: 'Direct listing at $86B valuation' },
+      ],
+      recentNewsSummary: 'Coinbase continues to battle the SEC while expanding institutional custody services. Their Coinbase Custody now holds BTC for 8 of 11 spot Bitcoin ETFs.',
+      lastUpdated: '2025-01',
+    },
     connections: [
-      { targetId: 'usdc', targetName: 'USDC', relationship: 'co-creator' },
-      { targetId: 'circle', targetName: 'Circle', relationship: 'partner' },
-      { targetId: 'brian-brooks', targetName: 'Brian Brooks', relationship: 'former Chief Legal' },
-      { targetId: 'chainalysis', targetName: 'Chainalysis', relationship: 'surveillance partner' },
+      { targetId: 'usdc', targetName: 'USDC', relationship: 'co-creator', context: 'Revenue sharing deal gives Coinbase direct stake in USDC growth' },
+      { targetId: 'circle', targetName: 'Circle', relationship: 'partner', context: 'Joint venture created Centre consortium that governed USDC' },
+      { targetId: 'chainalysis', targetName: 'Chainalysis', relationship: 'surveillance partner', context: 'Provides blockchain surveillance, shares data with law enforcement' },
+      { targetId: 'sec', targetName: 'SEC', relationship: 'under investigation', context: 'Ongoing lawsuit threatens exchange operations and token listings' },
     ],
   },
   {
@@ -216,8 +255,9 @@ export const entities: Entity[] = [
     description: 'Data analytics and surveillance company.',
     decentralizationScore: 10,
     connections: [
-      { targetId: 'peter-thiel', targetName: 'Peter Thiel', relationship: 'founder' },
       { targetId: 'financial-surveillance', targetName: 'Financial Surveillance', relationship: 'builds infrastructure' },
+      { targetId: 'digital-id', targetName: 'Digital ID', relationship: 'builds systems' },
+      { targetId: 'fbi', targetName: 'FBI', relationship: 'government contracts' },
     ],
   },
   {
@@ -227,24 +267,45 @@ export const entities: Entity[] = [
     description: 'Crypto trading firm. Collapsed with FTX.',
     decentralizationScore: 20,
     connections: [
-      { targetId: 'sam-bankman-fried', targetName: 'Sam Bankman-Fried', relationship: 'founder' },
-      { targetId: 'caroline-ellison', targetName: 'Caroline Ellison', relationship: 'CEO' },
-      { targetId: 'usdt', targetName: 'USDT (Tether)', relationship: 'major issuer' },
+      { targetId: 'usdt', targetName: 'USDT (Tether)', relationship: 'major user for manipulation' },
       { targetId: 'ftx-collapse', targetName: 'FTX Collapse (2022)', relationship: 'collapsed' },
+      { targetId: 'binance', targetName: 'Binance', relationship: 'major counterparty' },
     ],
   },
   {
     id: 'strategy',
     name: 'Strategy (MicroStrategy)',
     type: 'organization',
-    description: 'Largest corporate Bitcoin holder. ~450,000 BTC via convertible debt.',
+    description: 'Largest corporate Bitcoin holder. ~500,000+ BTC via convertible debt strategy.',
     category: 'bitcoin',
     decentralizationScore: 25,
+    threatLevel: 3,
+    captureStory: 'MicroStrategy (now Strategy) pioneered the corporate Bitcoin treasury strategy. While this brought institutional legitimacy, their ~500K BTC is held in Coinbase Custody - creating a massive single point of failure. Their debt-funded accumulation also ties Bitcoin\'s fate to traditional credit markets. If they\'re forced to liquidate, it would cause major market disruption.',
+    metadata: {
+      founded: '1989 (Bitcoin strategy: 2020)',
+      headquarters: 'Tysons Corner, Virginia, USA',
+      aum: '~500,000+ BTC (~$50+ billion)',
+      keyPeople: [
+        { name: 'Michael Saylor', role: 'Executive Chairman' },
+        { name: 'Phong Le', role: 'President & CEO' },
+      ],
+      socials: {
+        website: 'https://www.strategy.com',
+        twitter: 'https://twitter.com/saborstrategy',
+      },
+      regulatoryStatus: 'Publicly traded (NASDAQ: MSTR)',
+      fundingHistory: [
+        { round: 'Convertible Notes', date: '2020-2024', amount: '$7B+ raised for BTC purchases' },
+        { round: 'At-the-Market Offerings', date: '2024-2025', amount: '$20B+ equity raises' },
+      ],
+      recentNewsSummary: 'Strategy continues aggressive BTC accumulation, now holding over 500,000 BTC. Recent rebrand from MicroStrategy signals full pivot to Bitcoin treasury company.',
+      lastUpdated: '2025-01',
+    },
     connections: [
-      { targetId: 'michael-saylor', targetName: 'Michael Saylor', relationship: 'founder' },
-      { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'subordinate to creditors' },
-      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodian for BTC holdings' },
+      { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'subordinate to creditors', context: 'Debt-funded strategy means creditors could force liquidation in crisis' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodian for BTC holdings', context: '500K+ BTC in single custodian - massive concentration risk' },
       { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'benefited from approval' },
+      { targetId: 'microstrategy-btc-buys', targetName: 'MicroStrategy BTC Accumulation (2020-)', relationship: 'ongoing strategy' },
     ],
   },
 
@@ -259,9 +320,9 @@ export const entities: Entity[] = [
     connections: [
       { targetId: 'blackrock', targetName: 'BlackRock', relationship: 'issued by' },
       { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodian' },
-      { targetId: 'larry-fink', targetName: 'Larry Fink', relationship: 'CEO of parent company' },
       { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'approved' },
       { targetId: 'sec', targetName: 'SEC', relationship: 'regulated by' },
+      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'contributes to' },
     ],
   },
   {
@@ -300,9 +361,9 @@ export const entities: Entity[] = [
     category: 'bitcoin',
     decentralizationScore: 20,
     connections: [
-      { targetId: 'cathie-wood', targetName: 'Cathie Wood', relationship: 'ARK Invest CEO' },
       { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodian' },
       { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'approved' },
+      { targetId: 'sec', targetName: 'SEC', relationship: 'regulated by' },
     ],
   },
 
@@ -344,8 +405,8 @@ export const entities: Entity[] = [
     category: 'bitcoin',
     decentralizationScore: 25,
     connections: [
-      { targetId: 'mike-belshe', targetName: 'Mike Belshe', relationship: 'CEO' },
       { targetId: 'galaxy-digital', targetName: 'Galaxy Digital', relationship: 'acquisition target' },
+      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'alternative to Coinbase' },
     ],
   },
   {
@@ -356,7 +417,8 @@ export const entities: Entity[] = [
     category: 'bitcoin',
     decentralizationScore: 25,
     connections: [
-      { targetId: 'michael-shaulov', targetName: 'Michael Shaulov', relationship: 'CEO' },
+      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'alternative custody' },
+      { targetId: 'binance', targetName: 'Binance', relationship: 'custody client' },
     ],
   },
 
@@ -371,7 +433,7 @@ export const entities: Entity[] = [
     connections: [
       { targetId: 'fbtc', targetName: 'Fidelity Wise Origin (FBTC)', relationship: 'issues' },
       { targetId: 'fidelity-digital', targetName: 'Fidelity Digital Assets', relationship: 'owns' },
-      { targetId: 'abigail-johnson', targetName: 'Abigail Johnson', relationship: 'CEO' },
+      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'key player' },
     ],
   },
   {
@@ -384,8 +446,8 @@ export const entities: Entity[] = [
     connections: [
       { targetId: 'gbtc', targetName: 'Grayscale Bitcoin Trust (GBTC)', relationship: 'issues' },
       { targetId: 'dcg', targetName: 'Digital Currency Group', relationship: 'owned by' },
-      { targetId: 'michael-sonnenshein', targetName: 'Michael Sonnenshein', relationship: 'former CEO' },
       { targetId: 'sec', targetName: 'SEC', relationship: 'sued and won' },
+      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'forced approval' },
     ],
   },
   {
@@ -396,9 +458,9 @@ export const entities: Entity[] = [
     category: 'bitcoin',
     decentralizationScore: 25,
     connections: [
-      { targetId: 'barry-silbert', targetName: 'Barry Silbert', relationship: 'founder & CEO' },
       { targetId: 'grayscale', targetName: 'Grayscale Investments', relationship: 'owns' },
       { targetId: 'genesis-bankruptcy', targetName: 'Genesis Bankruptcy (2023)', relationship: 'subsidiary collapsed' },
+      { targetId: 'ftx-collapse', targetName: 'FTX Collapse (2022)', relationship: 'contagion from' },
     ],
   },
   {
@@ -409,8 +471,8 @@ export const entities: Entity[] = [
     category: 'bitcoin',
     decentralizationScore: 30,
     connections: [
-      { targetId: 'mike-novogratz', targetName: 'Mike Novogratz', relationship: 'founder & CEO' },
       { targetId: 'bitgo', targetName: 'BitGo', relationship: 'attempted acquisition' },
+      { targetId: 'coinbase', targetName: 'Coinbase', relationship: 'trading partner' },
     ],
   },
 
@@ -423,20 +485,20 @@ export const entities: Entity[] = [
     category: 'bitcoin',
     decentralizationScore: 30,
     connections: [
-      { targetId: 'elon-musk', targetName: 'Elon Musk', relationship: 'CEO' },
       { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'likely custodian' },
+      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'contributes to' },
     ],
   },
   {
     id: 'block-inc',
     name: 'Block Inc',
     type: 'organization',
-    description: 'Formerly Square. Holds ~8,027 BTC. Jack Dorsey\'s company.',
+    description: 'Formerly Square. Holds ~8,027 BTC.',
     category: 'bitcoin',
     decentralizationScore: 40,
     connections: [
-      { targetId: 'jack-dorsey', targetName: 'Jack Dorsey', relationship: 'founder & CEO' },
       { targetId: 'cash-app', targetName: 'Cash App', relationship: 'owns' },
+      { targetId: 'self-custody', targetName: 'Self-Custody', relationship: 'promotes Bitcoin adoption' },
     ],
   },
   {
@@ -447,8 +509,8 @@ export const entities: Entity[] = [
     category: 'bitcoin',
     decentralizationScore: 25,
     connections: [
-      { targetId: 'fred-thiel', targetName: 'Fred Thiel', relationship: 'CEO' },
       { targetId: 'btc-mining-centralization', targetName: 'BTC Mining Centralization', relationship: 'contributes to' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'likely custodian' },
     ],
   },
 
@@ -521,330 +583,9 @@ export const entities: Entity[] = [
     description: 'Office of the Comptroller of the Currency.',
     decentralizationScore: 5,
     connections: [
-      { targetId: 'brian-brooks', targetName: 'Brian Brooks', relationship: 'Acting Comptroller under Trump' },
-      { targetId: 'coinbase', targetName: 'Coinbase', relationship: 'Brooks came from there' },
-    ],
-  },
-
-  // PEOPLE
-  {
-    id: 'howard-lutnick',
-    name: 'Howard Lutnick',
-    type: 'person',
-    description: 'CEO of Cantor Fitzgerald. Commerce Secretary nominee.',
-    decentralizationScore: 30,
-    connections: [
-      { targetId: 'cantor-fitzgerald', targetName: 'Cantor Fitzgerald', relationship: 'CEO' },
-      { targetId: 'tether-limited', targetName: 'Tether Limited', relationship: 'custodies their treasury' },
-      { targetId: 'donald-trump', targetName: 'Donald Trump', relationship: 'cabinet nominee' },
-    ],
-  },
-  {
-    id: 'paolo-ardoino',
-    name: 'Paolo Ardoino',
-    type: 'person',
-    description: 'CTO of Tether and Bitfinex.',
-    decentralizationScore: 30,
-    connections: [
-      { targetId: 'tether-limited', targetName: 'Tether Limited', relationship: 'CTO' },
-      { targetId: 'giancarlo-devasini', targetName: 'Giancarlo Devasini', relationship: 'works with' },
-      { targetId: 'fbi', targetName: 'FBI', relationship: 'implemented access' },
-    ],
-  },
-  {
-    id: 'giancarlo-devasini',
-    name: 'Giancarlo Devasini',
-    type: 'person',
-    description: 'CFO and real power at Tether.',
-    decentralizationScore: 30,
-    connections: [
-      { targetId: 'tether-limited', targetName: 'Tether Limited', relationship: 'CFO, major shareholder' },
-      { targetId: 'paolo-ardoino', targetName: 'Paolo Ardoino', relationship: 'works with' },
-    ],
-  },
-  {
-    id: 'jeremy-allaire',
-    name: 'Jeremy Allaire',
-    type: 'person',
-    description: 'CEO of Circle.',
-    decentralizationScore: 35,
-    connections: [
-      { targetId: 'circle', targetName: 'Circle', relationship: 'CEO' },
-      { targetId: 'usdc', targetName: 'USDC', relationship: 'creator' },
-      { targetId: 'blackrock', targetName: 'BlackRock', relationship: 'investor relationship' },
-    ],
-  },
-  {
-    id: 'charles-cascarilla',
-    name: 'Charles Cascarilla',
-    type: 'person',
-    description: 'CEO of Paxos.',
-    decentralizationScore: 35,
-    connections: [
-      { targetId: 'paxos', targetName: 'Paxos', relationship: 'CEO' },
-      { targetId: 'pyusd', targetName: 'PYUSD', relationship: 'issues for PayPal' },
-      { targetId: 'congressional-hearing', targetName: 'Congressional Hearing (March 2025)', relationship: 'testified' },
-    ],
-  },
-  {
-    id: 'larry-fink',
-    name: 'Larry Fink',
-    type: 'person',
-    description: 'CEO of BlackRock.',
-    decentralizationScore: 25,
-    connections: [
-      { targetId: 'blackrock', targetName: 'BlackRock', relationship: 'CEO' },
-      { targetId: 'circle', targetName: 'Circle', relationship: 'investor' },
-      { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'central figure' },
-    ],
-  },
-  {
-    id: 'donald-trump',
-    name: 'Donald Trump',
-    type: 'person',
-    description: '45th and 47th US President.',
-    decentralizationScore: 35,
-    connections: [
-      { targetId: 'howard-lutnick', targetName: 'Howard Lutnick', relationship: 'Commerce Secretary' },
-      { targetId: 'david-sacks', targetName: 'David Sacks', relationship: 'Crypto Czar' },
-      { targetId: 'brian-brooks', targetName: 'Brian Brooks', relationship: 'appointed to OCC' },
-      { targetId: 'cbdc', targetName: 'CBDC', relationship: 'opposes publicly' },
-    ],
-  },
-  {
-    id: 'jared-kushner',
-    name: 'Jared Kushner',
-    type: 'person',
-    description: 'Trump son-in-law. Discussed stablecoins with Treasury.',
-    decentralizationScore: 30,
-    connections: [
-      { targetId: 'donald-trump', targetName: 'Donald Trump', relationship: 'father-in-law' },
-      { targetId: 'steve-mnuchin', targetName: 'Steve Mnuchin', relationship: 'emailed about stablecoins' },
-      { targetId: 'sam-altman', targetName: 'Sam Altman', relationship: 'forwarded his blog post' },
-    ],
-  },
-  {
-    id: 'steve-mnuchin',
-    name: 'Steve Mnuchin',
-    type: 'person',
-    description: 'Treasury Secretary (Trump 1.0). Goldman Sachs background.',
-    decentralizationScore: 25,
-    connections: [
-      { targetId: 'us-treasury', targetName: 'US Treasury', relationship: 'Secretary 2017-2021' },
-      { targetId: 'jared-kushner', targetName: 'Jared Kushner', relationship: 'received stablecoin proposal' },
-    ],
-  },
-  {
-    id: 'david-sacks',
-    name: 'David Sacks',
-    type: 'person',
-    description: 'Crypto and AI Czar (Trump 2.0). PayPal Mafia.',
-    decentralizationScore: 40,
-    connections: [
-      { targetId: 'donald-trump', targetName: 'Donald Trump', relationship: 'appointed by' },
-      { targetId: 'peter-thiel', targetName: 'Peter Thiel', relationship: 'PayPal Mafia colleague' },
-      { targetId: 'cbdc', targetName: 'CBDC', relationship: 'opposes' },
-    ],
-  },
-  {
-    id: 'brian-brooks',
-    name: 'Brian Brooks',
-    type: 'person',
-    description: 'Former OCC head. Ex-Coinbase.',
-    decentralizationScore: 35,
-    connections: [
-      { targetId: 'occ', targetName: 'OCC', relationship: 'Acting Comptroller' },
-      { targetId: 'coinbase', targetName: 'Coinbase', relationship: 'former Chief Legal' },
-      { targetId: 'donald-trump', targetName: 'Donald Trump', relationship: 'appointed by' },
-    ],
-  },
-  {
-    id: 'sam-bankman-fried',
-    name: 'Sam Bankman-Fried',
-    type: 'person',
-    description: 'Founder of FTX and Alameda. Convicted fraudster.',
-    decentralizationScore: 15,
-    connections: [
-      { targetId: 'alameda-research', targetName: 'Alameda Research', relationship: 'founder' },
-      { targetId: 'caroline-ellison', targetName: 'Caroline Ellison', relationship: 'associate' },
-      { targetId: 'usdt', targetName: 'USDT (Tether)', relationship: 'used for manipulation' },
-      { targetId: 'ftx-collapse', targetName: 'FTX Collapse (2022)', relationship: 'collapsed' },
-    ],
-  },
-  {
-    id: 'caroline-ellison',
-    name: 'Caroline Ellison',
-    type: 'person',
-    description: 'CEO of Alameda Research. Key FTX witness.',
-    decentralizationScore: 20,
-    connections: [
-      { targetId: 'alameda-research', targetName: 'Alameda Research', relationship: 'CEO' },
-      { targetId: 'sam-bankman-fried', targetName: 'Sam Bankman-Fried', relationship: 'associate' },
-      { targetId: 'ftx-collapse', targetName: 'FTX Collapse (2022)', relationship: 'testified' },
-    ],
-  },
-  {
-    id: 'michael-saylor',
-    name: 'Michael Saylor',
-    type: 'person',
-    description: 'Founder of Strategy. Largest corporate Bitcoin holder.',
-    decentralizationScore: 50,
-    connections: [
-      { targetId: 'strategy', targetName: 'Strategy (MicroStrategy)', relationship: 'founder' },
-      { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'subordinate to creditors' },
-    ],
-  },
-  {
-    id: 'peter-thiel',
-    name: 'Peter Thiel',
-    type: 'person',
-    description: 'PayPal co-founder. Palantir founder.',
-    decentralizationScore: 40,
-    connections: [
-      { targetId: 'palantir', targetName: 'Palantir', relationship: 'founder' },
-      { targetId: 'paxos', targetName: 'Paxos', relationship: 'investor' },
-      { targetId: 'david-sacks', targetName: 'David Sacks', relationship: 'PayPal Mafia colleague' },
-    ],
-  },
-  {
-    id: 'sam-altman',
-    name: 'Sam Altman',
-    type: 'person',
-    description: 'CEO of OpenAI. Worldcoin founder.',
-    decentralizationScore: 35,
-    connections: [
-      { targetId: 'jared-kushner', targetName: 'Jared Kushner', relationship: 'blog post forwarded' },
-      { targetId: 'digital-id', targetName: 'Digital ID', relationship: 'Worldcoin builds this' },
-    ],
-  },
-  {
-    id: 'jamie-dimon',
-    name: 'Jamie Dimon',
-    type: 'person',
-    description: 'CEO of JP Morgan.',
-    decentralizationScore: 20,
-    connections: [
-      { targetId: 'jp-morgan', targetName: 'JP Morgan', relationship: 'CEO' },
-      { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'core member' },
-    ],
-  },
-
-  // BITCOIN-RELATED PEOPLE
-  {
-    id: 'cathie-wood',
-    name: 'Cathie Wood',
-    type: 'person',
-    description: 'CEO of ARK Invest. Early Bitcoin ETF advocate.',
-    category: 'bitcoin',
-    decentralizationScore: 45,
-    connections: [
-      { targetId: 'arkb', targetName: 'ARK 21Shares Bitcoin ETF (ARKB)', relationship: 'manages' },
-      { targetId: 'btc-etf-approval', targetName: 'BTC ETF Approval (Jan 2024)', relationship: 'lobbied for' },
-    ],
-  },
-  {
-    id: 'jack-dorsey',
-    name: 'Jack Dorsey',
-    type: 'person',
-    description: 'Founder of Twitter and Block Inc. Bitcoin maximalist.',
-    category: 'bitcoin',
-    decentralizationScore: 70,
-    connections: [
-      { targetId: 'block-inc', targetName: 'Block Inc', relationship: 'founder & CEO' },
-      { targetId: 'cash-app', targetName: 'Cash App', relationship: 'owns via Block' },
-    ],
-  },
-  {
-    id: 'elon-musk',
-    name: 'Elon Musk',
-    type: 'person',
-    description: 'CEO of Tesla and SpaceX. Owns X (Twitter). Crypto market mover.',
-    category: 'both',
-    decentralizationScore: 45,
-    connections: [
-      { targetId: 'tesla', targetName: 'Tesla', relationship: 'CEO' },
-      { targetId: 'donald-trump', targetName: 'Donald Trump', relationship: 'DOGE advisor' },
-    ],
-  },
-  {
-    id: 'barry-silbert',
-    name: 'Barry Silbert',
-    type: 'person',
-    description: 'Founder of Digital Currency Group. Major crypto investor.',
-    category: 'bitcoin',
-    decentralizationScore: 40,
-    connections: [
-      { targetId: 'dcg', targetName: 'Digital Currency Group', relationship: 'founder & CEO' },
-      { targetId: 'grayscale', targetName: 'Grayscale Investments', relationship: 'owns via DCG' },
-      { targetId: 'genesis-bankruptcy', targetName: 'Genesis Bankruptcy (2023)', relationship: 'subsidiary collapsed' },
-    ],
-  },
-  {
-    id: 'mike-novogratz',
-    name: 'Mike Novogratz',
-    type: 'person',
-    description: 'CEO of Galaxy Digital. Former Goldman Sachs partner.',
-    category: 'bitcoin',
-    decentralizationScore: 45,
-    connections: [
-      { targetId: 'galaxy-digital', targetName: 'Galaxy Digital', relationship: 'founder & CEO' },
-    ],
-  },
-  {
-    id: 'abigail-johnson',
-    name: 'Abigail Johnson',
-    type: 'person',
-    description: 'CEO of Fidelity. Championed early crypto adoption.',
-    category: 'bitcoin',
-    decentralizationScore: 40,
-    connections: [
-      { targetId: 'fidelity', targetName: 'Fidelity Investments', relationship: 'CEO' },
-      { targetId: 'fidelity-digital', targetName: 'Fidelity Digital Assets', relationship: 'created' },
-    ],
-  },
-  {
-    id: 'michael-sonnenshein',
-    name: 'Michael Sonnenshein',
-    type: 'person',
-    description: 'Former CEO of Grayscale. Led SEC lawsuit.',
-    category: 'bitcoin',
-    decentralizationScore: 40,
-    connections: [
-      { targetId: 'grayscale', targetName: 'Grayscale Investments', relationship: 'former CEO' },
-      { targetId: 'gbtc', targetName: 'Grayscale Bitcoin Trust (GBTC)', relationship: 'led ETF conversion' },
-    ],
-  },
-  {
-    id: 'mike-belshe',
-    name: 'Mike Belshe',
-    type: 'person',
-    description: 'CEO of BitGo. Crypto custody pioneer.',
-    category: 'bitcoin',
-    decentralizationScore: 50,
-    connections: [
-      { targetId: 'bitgo', targetName: 'BitGo', relationship: 'CEO' },
-    ],
-  },
-  {
-    id: 'michael-shaulov',
-    name: 'Michael Shaulov',
-    type: 'person',
-    description: 'CEO of Fireblocks.',
-    category: 'bitcoin',
-    decentralizationScore: 45,
-    connections: [
-      { targetId: 'fireblocks', targetName: 'Fireblocks', relationship: 'CEO' },
-    ],
-  },
-  {
-    id: 'fred-thiel',
-    name: 'Fred Thiel',
-    type: 'person',
-    description: 'CEO of Marathon Digital.',
-    category: 'bitcoin',
-    decentralizationScore: 45,
-    connections: [
-      { targetId: 'marathon-digital', targetName: 'Marathon Digital', relationship: 'CEO' },
+      { targetId: 'us-treasury', targetName: 'US Treasury', relationship: 'bureau of' },
+      { targetId: 'coinbase', targetName: 'Coinbase', relationship: 'regulates' },
+      { targetId: 'circle', targetName: 'Circle', relationship: 'regulates' },
     ],
   },
 
@@ -870,8 +611,8 @@ export const entities: Entity[] = [
     connections: [
       { targetId: 'usdt', targetName: 'USDT (Tether)', relationship: 'has same capabilities' },
       { targetId: 'usdc', targetName: 'USDC', relationship: 'has same capabilities' },
-      { targetId: 'donald-trump', targetName: 'Donald Trump', relationship: 'opposes publicly' },
       { targetId: 'programmable-money', targetName: 'Programmable Money', relationship: 'feared feature' },
+      { targetId: 'federal-reserve', targetName: 'Federal Reserve', relationship: 'potential issuer' },
     ],
   },
   {
@@ -906,8 +647,8 @@ export const entities: Entity[] = [
     decentralizationScore: 10,
     connections: [
       { targetId: 'blackrock', targetName: 'BlackRock', relationship: 'central node' },
-      { targetId: 'larry-fink', targetName: 'Larry Fink', relationship: 'key figure' },
       { targetId: 'jp-morgan', targetName: 'JP Morgan', relationship: 'core member' },
+      { targetId: 'federal-reserve', targetName: 'Federal Reserve', relationship: 'monetary authority' },
     ],
   },
   {
@@ -917,8 +658,9 @@ export const entities: Entity[] = [
     description: 'Digital identity systems. Prerequisite for stablecoins and CBDCs.',
     decentralizationScore: 20,
     connections: [
-      { targetId: 'sam-altman', targetName: 'Sam Altman', relationship: 'builds Worldcoin' },
       { targetId: 'palantir', targetName: 'Palantir', relationship: 'builds systems' },
+      { targetId: 'financial-surveillance', targetName: 'Financial Surveillance', relationship: 'enables' },
+      { targetId: 'cbdc', targetName: 'CBDC', relationship: 'prerequisite for' },
     ],
   },
 
@@ -970,7 +712,7 @@ export const entities: Entity[] = [
     decentralizationScore: 55,
     connections: [
       { targetId: 'block-inc', targetName: 'Block Inc', relationship: 'owned by' },
-      { targetId: 'jack-dorsey', targetName: 'Jack Dorsey', relationship: 'created by' },
+      { targetId: 'self-custody', targetName: 'Self-Custody', relationship: 'promotes Bitcoin buying' },
     ],
   },
   {
@@ -980,11 +722,23 @@ export const entities: Entity[] = [
     description: 'The Bitcoin network itself - a decentralized, permissionless, censorship-resistant protocol. The benchmark for true decentralization.',
     category: 'bitcoin',
     decentralizationScore: 100,
+    threatLevel: 1,
     captureStory: 'Bitcoin was created as a peer-to-peer electronic cash system with no central authority. Its open-source protocol, distributed mining, and permissionless nature represent the gold standard of decentralization that all other entities are measured against. However, the growing concentration of Bitcoin in ETFs, custodians, and corporate treasuries threatens these founding principles.',
+    metadata: {
+      founded: '2009 (Genesis Block: January 3rd)',
+      headquarters: 'Decentralized / Global',
+      aum: '~21 million BTC max supply (~$2 trillion market cap)',
+      socials: {
+        website: 'https://bitcoin.org',
+        github: 'https://github.com/bitcoin/bitcoin',
+      },
+      recentNewsSummary: 'Bitcoin continues to operate as designed with no downtime since 2013. Hashrate at all-time highs. Growing institutional adoption via ETFs represents both validation and potential capture vector.',
+      lastUpdated: '2025-01',
+    },
     connections: [
-      { targetId: 'self-custody', targetName: 'Self-Custody', relationship: 'enables' },
-      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'threatened by' },
-      { targetId: 'btc-mining-centralization', targetName: 'BTC Mining Centralization', relationship: 'vulnerable to' },
+      { targetId: 'self-custody', targetName: 'Self-Custody', relationship: 'enables', context: 'Bitcoin\'s core value proposition - be your own bank' },
+      { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'threatened by', context: 'ETFs and corporate treasuries moving BTC to centralized custodians' },
+      { targetId: 'btc-mining-centralization', targetName: 'BTC Mining Centralization', relationship: 'vulnerable to', context: 'Mining pools and ASIC manufacturers create concentration risk' },
     ],
   },
 
@@ -993,15 +747,13 @@ export const entities: Entity[] = [
     id: 'ftx-collapse',
     name: 'FTX Collapse (2022)',
     type: 'event',
-    description: "Sam Bankman-Fried's exchange collapsed.",
+    description: "Major crypto exchange collapsed, exposing fraud.",
     decentralizationScore: 50,
     connections: [
-      { targetId: 'sam-bankman-fried', targetName: 'Sam Bankman-Fried', relationship: 'founder' },
       { targetId: 'alameda-research', targetName: 'Alameda Research', relationship: 'trading arm' },
-      { targetId: 'caroline-ellison', targetName: 'Caroline Ellison', relationship: 'testified' },
       { targetId: 'usdt', targetName: 'USDT (Tether)', relationship: 'used for manipulation' },
+      { targetId: 'binance', targetName: 'Binance', relationship: 'triggered bank run' },
     ],
-    metadata: { date: '2022-11' },
   },
   {
     id: 'tornado-cash-sanctions',
@@ -1015,7 +767,6 @@ export const entities: Entity[] = [
       { targetId: 'circle', targetName: 'Circle', relationship: 'complied immediately' },
       { targetId: 'programmable-money', targetName: 'Programmable Money', relationship: 'demonstrated' },
     ],
-    metadata: { date: '2022-08' },
   },
   {
     id: 'congressional-hearing',
@@ -1024,11 +775,10 @@ export const entities: Entity[] = [
     description: 'US Congressional hearing on stablecoins.',
     decentralizationScore: 50,
     connections: [
-      { targetId: 'charles-cascarilla', targetName: 'Charles Cascarilla', relationship: 'testified' },
-      { targetId: 'paxos', targetName: 'Paxos', relationship: 'CEO testified' },
+      { targetId: 'paxos', targetName: 'Paxos', relationship: 'testified' },
       { targetId: 'financial-surveillance', targetName: 'Financial Surveillance', relationship: 'admitted capabilities' },
+      { targetId: 'programmable-money', targetName: 'Programmable Money', relationship: 'revealed freeze powers' },
     ],
-    metadata: { date: '2025-03' },
   },
 
   // BITCOIN EVENTS
@@ -1048,7 +798,6 @@ export const entities: Entity[] = [
       { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'became dominant custodian' },
       { targetId: 'btc-custody-concentration', targetName: 'BTC Custody Concentration', relationship: 'created' },
     ],
-    metadata: { date: '2024-01' },
   },
   {
     id: 'genesis-bankruptcy',
@@ -1059,10 +808,9 @@ export const entities: Entity[] = [
     decentralizationScore: 50,
     connections: [
       { targetId: 'dcg', targetName: 'Digital Currency Group', relationship: 'parent company' },
-      { targetId: 'barry-silbert', targetName: 'Barry Silbert', relationship: 'DCG founder' },
       { targetId: 'ftx-collapse', targetName: 'FTX Collapse (2022)', relationship: 'contagion from' },
+      { targetId: 'grayscale', targetName: 'Grayscale Investments', relationship: 'sister company' },
     ],
-    metadata: { date: '2023-01' },
   },
   {
     id: 'microstrategy-btc-buys',
@@ -1073,10 +821,9 @@ export const entities: Entity[] = [
     decentralizationScore: 50,
     connections: [
       { targetId: 'strategy', targetName: 'Strategy (MicroStrategy)', relationship: 'buyer' },
-      { targetId: 'michael-saylor', targetName: 'Michael Saylor', relationship: 'architect' },
       { targetId: 'financial-industrial-complex', targetName: 'Financial Industrial Complex', relationship: 'funded by' },
+      { targetId: 'coinbase-custody', targetName: 'Coinbase Custody', relationship: 'custodies their BTC' },
     ],
-    metadata: { date: '2020-08' },
   },
 ];
 
@@ -1110,7 +857,7 @@ export const timelineEvents: TimelineEvent[] = [
     date: '2022-11-11',
     title: 'FTX Collapse',
     description: 'FTX files for bankruptcy. Alameda exposed for using Tether for manipulation.',
-    entityIds: ['ftx-collapse', 'sam-bankman-fried', 'alameda-research'],
+    entityIds: ['ftx-collapse', 'alameda-research'],
     type: 'event',
   },
   {
@@ -1132,17 +879,17 @@ export const timelineEvents: TimelineEvent[] = [
   {
     id: 'te-7',
     date: '2025-01-20',
-    title: 'Trump Returns, Lutnick Nominated',
-    description: 'Howard Lutnick nominated as Commerce Secretary. Direct Tether-government connection.',
-    entityIds: ['donald-trump', 'howard-lutnick', 'cantor-fitzgerald'],
+    title: 'Trump Returns, Pro-Crypto Cabinet',
+    description: 'New administration brings pro-crypto policies. Tether-government connections strengthen.',
+    entityIds: ['cantor-fitzgerald', 'us-treasury'],
     type: 'event',
   },
   {
     id: 'te-8',
     date: '2025-03-15',
     title: 'Congressional Hearing on Stablecoins',
-    description: 'Paxos CEO admits stablecoins can monitor, freeze, reverse transactions.',
-    entityIds: ['congressional-hearing', 'charles-cascarilla', 'paxos'],
+    description: 'Stablecoin issuers admit they can monitor, freeze, reverse transactions.',
+    entityIds: ['congressional-hearing', 'paxos'],
     type: 'event',
   },
 
@@ -1152,7 +899,7 @@ export const timelineEvents: TimelineEvent[] = [
     date: '2020-08-11',
     title: 'MicroStrategy Announces Bitcoin Strategy',
     description: 'MicroStrategy buys first $250M in Bitcoin, beginning corporate adoption trend.',
-    entityIds: ['strategy', 'michael-saylor', 'microstrategy-btc-buys'],
+    entityIds: ['strategy', 'microstrategy-btc-buys'],
     type: 'event',
   },
   {
@@ -1160,7 +907,7 @@ export const timelineEvents: TimelineEvent[] = [
     date: '2021-02-08',
     title: 'Tesla Buys $1.5B in Bitcoin',
     description: 'Tesla reveals $1.5B Bitcoin purchase, later sold most holdings.',
-    entityIds: ['tesla', 'elon-musk'],
+    entityIds: ['tesla'],
     type: 'event',
   },
   {
@@ -1168,7 +915,7 @@ export const timelineEvents: TimelineEvent[] = [
     date: '2023-01-19',
     title: 'Genesis Files for Bankruptcy',
     description: 'Genesis Global declares bankruptcy following FTX contagion.',
-    entityIds: ['genesis-bankruptcy', 'dcg', 'barry-silbert'],
+    entityIds: ['genesis-bankruptcy', 'dcg'],
     type: 'event',
   },
   {
@@ -1198,9 +945,9 @@ export const timelineEvents: TimelineEvent[] = [
   {
     id: 'te-btc-7',
     date: '2024-11-05',
-    title: 'Trump Wins Election',
-    description: 'Pro-crypto Trump wins presidency. Howard Lutnick nominated for Commerce.',
-    entityIds: ['donald-trump', 'howard-lutnick', 'david-sacks'],
+    title: 'Pro-Crypto Administration Elected',
+    description: 'Pro-crypto administration wins presidency. Tether connections strengthened.',
+    entityIds: ['cantor-fitzgerald', 'tether-limited'],
     type: 'event',
   },
 ];
