@@ -656,7 +656,7 @@ export const entities: Entity[] = [
     type: 'government',
     description: 'National Security Agency. Speculated by some to be involved in Bitcoin\'s creation. Controls surveillance infrastructure.',
     decentralizationScore: 5,
-    threatLevel: 10,
+    threatLevel: 5,
     captureStory: 'The NSA represents the ultimate surveillance state. Some theorize the NSA created Bitcoin as a honeypot or experiment. Whether or not this is true, the NSA has backdoor access to most technology infrastructure through the Proof of Weapons Network and works closely with companies like Palantir to maintain comprehensive surveillance capabilities.',
     connections: [
       { targetId: 'bitcoin-protocol', targetName: 'Bitcoin', relationship: 'speculated creator', explanation: 'Some theories suggest the NSA or related intelligence agencies created Bitcoin, though this remains unproven speculation.' },
@@ -671,7 +671,7 @@ export const entities: Entity[] = [
     type: 'government',
     description: 'Central Intelligence Agency. Conducted Operation Mockingbird to control media. Connected to covert operations globally.',
     decentralizationScore: 5,
-    threatLevel: 10,
+    threatLevel: 5,
     captureStory: 'The CIA\'s Operation Mockingbird embedded intelligence operatives in major media organizations, creating a narrative control apparatus that persists today through the Proof of Weapons Network. The agency\'s history of regime change operations, color revolutions, and market manipulation makes it a central threat to any truly decentralized system.',
     connections: [
       { targetId: 'dollar-hegemony', targetName: 'Dollar Hegemony', relationship: 'enforces globally', explanation: 'The CIA enforces dollar hegemony through covert operations, regime change, and support for US-aligned governments.' },
@@ -685,7 +685,7 @@ export const entities: Entity[] = [
     type: 'government',
     description: 'Bank for International Settlements. "Central bank of central banks." Coordinates global monetary policy.',
     decentralizationScore: 5,
-    threatLevel: 10,
+    threatLevel: 5,
     captureStory: 'The BIS is the most powerful financial institution you\'ve never heard of. It coordinates central bank policy globally, facilitated Nazi gold transfers during WWII, and created the architecture for dollar hegemony. The Federal Reserve is its main shareholder, making it the command center for the debt-based monetary system.',
     connections: [
       { targetId: 'federal-reserve', targetName: 'Federal Reserve', relationship: 'main shareholder', explanation: 'The Federal Reserve is the main shareholder in the BIS, giving it control over global central bank coordination.' },
@@ -700,7 +700,7 @@ export const entities: Entity[] = [
     type: 'government',
     description: 'International Monetary Fund. Provides dollar loans with austerity conditions. Weapon for neocolonial resource extraction.',
     decentralizationScore: 5,
-    threatLevel: 10,
+    threatLevel: 5,
     captureStory: 'The IMF\'s playbook is simple: lend dollars to desperate nations, demand austerity and privatization, extract resources. Countries that resist face "color revolutions" or economic warfare. China\'s Belt and Road Initiative is reversing this model, which is why the US views it as an existential threat to dollar hegemony.',
     connections: [
       { targetId: 'dollar-hegemony', targetName: 'Dollar Hegemony', relationship: 'enforces globally', explanation: 'The IMF enforces dollar hegemony by providing loans denominated in dollars with conditions that ensure dependency.' },
@@ -715,7 +715,7 @@ export const entities: Entity[] = [
     type: 'government',
     description: 'International financial institution. Partners with IMF in development lending tied to privatization requirements.',
     decentralizationScore: 5,
-    threatLevel: 10,
+    threatLevel: 5,
     captureStory: 'The World Bank presents itself as a development institution but functions as a mechanism for transferring wealth from developing nations to the Proof of Weapons Network. Its loans come with requirements to privatize national assets, opening them to purchase by Western asset managers at fire-sale prices.',
     connections: [
       { targetId: 'imf', targetName: 'IMF', relationship: 'partner institution', explanation: 'The World Bank and IMF coordinate lending and policy requirements to maintain dollar hegemony.' },
