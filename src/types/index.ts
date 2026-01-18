@@ -7,6 +7,19 @@ export type EntityCategory = 'bitcoin' | 'stablecoin' | 'both';
 // Threat level: 1 = pro-decentralization, 5 = major centralization threat
 export type ThreatLevel = 1 | 2 | 3 | 4 | 5;
 
+// Score breakdown for composite decentralization score
+export interface ScoreBreakdown {
+  custody: number;        // 0-100: Who controls keys/assets?
+  transparency: number;   // 0-100: Open source, on-chain proofs, audits?
+  permissionless: number; // 0-100: Can anyone use without permission?
+}
+
+// Region styling for concept entities (background hulls)
+export interface RegionStyle {
+  color: string;          // e.g., '#ef4444'
+  opacity?: number;       // default 0.12
+}
+
 export interface KeyPerson {
   name: string;
   role: string;
@@ -73,6 +86,8 @@ export interface Entity {
   connections: Connection[];
   threatLevel?: ThreatLevel; // 1 = pro-decentralization, 5 = major threat
   decentralizationScore?: number; // 0-100 scale (100 = fully decentralized) - legacy, use threatLevel
+  scoreBreakdown?: ScoreBreakdown; // Custody/transparency/permissionless breakdown
+  regionStyle?: RegionStyle; // For concepts only - background hull styling
   captureStory?: string; // One paragraph: why this entity matters for centralization
   sources?: EntitySource[];
   metadata?: EntityMetadata; // Structured metadata for display
@@ -85,6 +100,7 @@ export interface Connection {
   targetName: string;
   relationship: string;
   context?: string; // One-liner explaining why this connection matters
+  explanation?: string; // Full-sentence plain English explanation for edge click
   edgeType?: EdgeType;
   strength?: number;
   verified?: boolean;
@@ -113,6 +129,7 @@ export interface GraphLink {
   source: string;
   target: string;
   relationship: string;
+  explanation?: string; // Full-sentence plain English explanation
   edgeType: EdgeType;
   strength?: number;
   verified?: boolean;

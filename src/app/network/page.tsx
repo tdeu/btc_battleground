@@ -4,11 +4,14 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
 import { entities, getGraphData, classifyEdgeType } from '@/data/entities';
-import { EntityType, EdgeType, ThreatLevel } from '@/types';
+import { EntityType, EdgeType, ThreatLevel, RegionStyle } from '@/types';
 import { EDGE_COLORS, EDGE_LABELS, ALL_EDGE_TYPES } from '@/lib/data';
 import { getDefaultScore, getDecentralizationColor, getDecentralizationLabel } from '@/lib/scoring';
 import CapturePath from '@/components/CapturePath';
 import EntityDetailModal from '@/components/EntityDetailModal';
+import EdgeDetailPanel from '@/components/EdgeDetailPanel';
+import PathToCenter from '@/components/PathToCenter';
+import ScoreBreakdown from '@/components/ScoreBreakdown';
 import { PathResult } from '@/lib/graph/pathfinding';
 import { Loader2, RotateCcw, Search, X, Swords } from 'lucide-react';
 import { Entity } from '@/types';
@@ -163,6 +166,13 @@ export default function NetworkPage() {
   const [modalEntity, setModalEntity] = useState<Entity | null>(null);
   const [tooltipData, setTooltipData] = useState<{ x: number; y: number; entity: typeof entities[0] } | null>(null);
   const [edgeTooltipData, setEdgeTooltipData] = useState<{ x: number; y: number; source: string; target: string; edgeType: EdgeType; force: string } | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<{
+    sourceId: string;
+    targetId: string;
+    relationship: string;
+    explanation?: string;
+    edgeType: EdgeType;
+  } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -229,7 +239,7 @@ export default function NetworkPage() {
     setShowSearch(false);
   }, []);
 
-  // Reset view handler - centers on Bitcoin Protocol
+  // Reset view handler - centers on Bitcoin (positioned at radius 70px from center)
   const handleResetView = useCallback(() => {
     if (!svgRef.current || !zoomRef.current || !simulationRef.current) return;
 
@@ -237,7 +247,7 @@ export default function NetworkPage() {
     const width = svgRef.current.clientWidth;
     const height = svgRef.current.clientHeight;
 
-    // Find Bitcoin Protocol node and center on it
+    // Find Bitcoin node and center on it
     const nodes = simulationRef.current.nodes();
     const bitcoinNode = nodes.find((n: any) => n.id === 'bitcoin-protocol') as any;
 
@@ -275,14 +285,26 @@ export default function NetworkPage() {
     const graphData = getGraphData();
 
     // Filter nodes and links
-    let filteredNodes = [...graphData.nodes];
-    let filteredLinks = [...graphData.links];
+    // Remove persons (shown in detail panels) and concepts (shown as regions)
+    // BUT keep bitcoin-protocol as a visible centerpiece node
+    let filteredNodes = [...graphData.nodes].filter(n =>
+      n.type !== 'person' &&
+      (n.type !== 'concept' || n.id === 'bitcoin-protocol')
+    );
+    const nodeIds = new Set(filteredNodes.map(n => n.id));
+
+    // Helper to get ID from link source/target (can be string or object)
+    const getLinkId = (node: any): string => typeof node === 'string' ? node : node.id;
+
+    let filteredLinks = [...graphData.links].filter(l =>
+      nodeIds.has(getLinkId(l.source)) && nodeIds.has(getLinkId(l.target))
+    );
 
     // Filter by entity type
     if (filterType !== 'all') {
       filteredNodes = graphData.nodes.filter(n => n.type === filterType);
       const nodeIds = new Set(filteredNodes.map(n => n.id));
-      filteredLinks = graphData.links.filter(l => nodeIds.has(l.source as string) && nodeIds.has(l.target as string));
+      filteredLinks = graphData.links.filter(l => nodeIds.has(getLinkId(l.source)) && nodeIds.has(getLinkId(l.target)));
     }
 
     // Filter by edge type
@@ -290,8 +312,8 @@ export default function NetworkPage() {
       filteredLinks = filteredLinks.filter(l => l.edgeType === filterEdgeType);
       const linkedNodeIds = new Set<string>();
       filteredLinks.forEach(l => {
-        linkedNodeIds.add(l.source as string);
-        linkedNodeIds.add(l.target as string);
+        linkedNodeIds.add(getLinkId(l.source));
+        linkedNodeIds.add(getLinkId(l.target));
       });
       filteredNodes = filteredNodes.filter(n => linkedNodeIds.has(n.id));
     }
@@ -299,13 +321,13 @@ export default function NetworkPage() {
     // Filter by force direction
     if (filterForceDirection !== 'all') {
       filteredLinks = filteredLinks.filter(l => {
-        const force = getForceDirection(l.source as string, l.target as string);
+        const force = getForceDirection(getLinkId(l.source), getLinkId(l.target));
         return force === filterForceDirection;
       });
       const linkedNodeIds = new Set<string>();
       filteredLinks.forEach(l => {
-        linkedNodeIds.add(l.source as string);
-        linkedNodeIds.add(l.target as string);
+        linkedNodeIds.add(getLinkId(l.source));
+        linkedNodeIds.add(getLinkId(l.target));
       });
       filteredNodes = filteredNodes.filter(n => linkedNodeIds.has(n.id));
     }
@@ -339,15 +361,135 @@ export default function NetworkPage() {
         (node as any).y = pos.y;
       }
 
-      // Pin Bitcoin Protocol at exact center
-      if (node.id === 'bitcoin-protocol') {
-        (node as any).fx = centerX;
-        (node as any).fy = centerY;
-      }
+      // Bitcoin is positioned by radial force at radius 70px (not pinned to exact center)
+      // This prevents it from being inside hostile region hulls
     });
 
     // Create container group for zoom
     const g = svg.append('g');
+
+    // Get concept entities for region rendering
+    const conceptEntities = entities.filter(e => e.type === 'concept' && e.regionStyle);
+
+    // Create regions layer (behind everything else for z-order)
+    const regionsGroup = g.append('g').attr('class', 'concept-regions');
+
+    // Helper function to expand polygon for padding
+    function expandPolygon(points: [number, number][], padding: number): [number, number][] {
+      if (points.length < 3) return points;
+      const centroid = points.reduce(
+        (acc, p) => [acc[0] + p[0] / points.length, acc[1] + p[1] / points.length],
+        [0, 0] as [number, number]
+      );
+      return points.map(p => {
+        const dx = p[0] - centroid[0];
+        const dy = p[1] - centroid[1];
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len === 0) return p;
+        return [p[0] + (dx / len) * padding, p[1] + (dy / len) * padding] as [number, number];
+      });
+    }
+
+    // Create region paths for each concept
+    const regionData = conceptEntities.map(concept => ({
+      id: concept.id,
+      name: concept.name,
+      style: concept.regionStyle as RegionStyle,
+      memberIds: concept.connections.map(c => c.targetId),
+      score: concept.decentralizationScore || 50,
+      // Calculate size for sorting (number of members)
+      size: concept.connections.length,
+    }));
+
+    // Sort regions by size - larger regions first (will be rendered underneath)
+    // Smaller regions rendered last will be on top and receive hover events first
+    const sortedRegionData = regionData.sort((a, b) => b.size - a.size);
+
+    const regions = regionsGroup.selectAll('g.region')
+      .data(sortedRegionData)
+      .join('g')
+      .attr('class', 'region')
+      .style('mix-blend-mode', 'screen')
+      .style('cursor', 'pointer');
+
+    regions.append('path')
+      .attr('class', 'region-hull')
+      .attr('fill', d => d.style.color)
+      .attr('fill-opacity', 0)
+      .attr('stroke', d => d.style.color)
+      .attr('stroke-opacity', 0.4)
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', '6,3')
+      .style('pointer-events', 'all'); // Ensure regions can receive clicks
+
+    regions.append('text')
+      .attr('class', 'region-label')
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#ffffff')
+      .attr('fill-opacity', 0)
+      .attr('font-size', '14px')
+      .attr('font-weight', '700')
+      .style('pointer-events', 'none')
+      .style('text-transform', 'uppercase')
+      .style('letter-spacing', '1px')
+      .style('text-shadow', '0 0 8px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.8)')
+      .text(d => d.name);
+
+    regions.append('text')
+      .attr('class', 'region-score')
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#ffffff')
+      .attr('fill-opacity', 0)
+      .attr('font-size', '12px')
+      .attr('font-weight', '500')
+      .style('pointer-events', 'none')
+      .style('text-shadow', '0 0 6px rgba(0,0,0,0.8)')
+      .text(d => `Score: ${d.score}`);
+
+    // Add hover interactions to regions
+    regions
+      .on('mouseenter', function() {
+        const region = d3.select(this);
+        region.select('.region-hull')
+          .transition()
+          .duration(200)
+          .attr('fill-opacity', 0.3)
+          .attr('stroke-opacity', 0.9)
+          .attr('stroke-width', 3);
+        region.select('.region-label')
+          .transition()
+          .duration(200)
+          .attr('fill-opacity', 1);
+        region.select('.region-score')
+          .transition()
+          .duration(200)
+          .attr('fill-opacity', 0.8);
+      })
+      .on('mouseleave', function() {
+        const region = d3.select(this);
+        region.select('.region-hull')
+          .transition()
+          .duration(200)
+          .attr('fill-opacity', 0)
+          .attr('stroke-opacity', 0.4)
+          .attr('stroke-width', 2);
+        region.select('.region-label')
+          .transition()
+          .duration(200)
+          .attr('fill-opacity', 0);
+        region.select('.region-score')
+          .transition()
+          .duration(200)
+          .attr('fill-opacity', 0);
+      })
+      .on('click', function(event, d: any) {
+        event.stopPropagation();
+        // Find the concept entity and open modal
+        const conceptEntity = entities.find(e => e.id === d.id);
+        if (conceptEntity) {
+          setModalEntity(conceptEntity);
+        }
+      });
 
     // Add zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
@@ -366,6 +508,19 @@ export default function NetworkPage() {
       setEdgeTooltipData(null);
     });
 
+    // Initialize node positions around a circle based on their score
+    // This gives the simulation a good starting point for even distribution
+    filteredNodes.forEach((node: any, i: number) => {
+      const entity = entities.find(e => e.id === node.id);
+      const score = entity?.decentralizationScore ?? getDefaultScore(node.type);
+      const angle = (i / filteredNodes.length) * 2 * Math.PI;
+      const maxRadius = 350;
+      const minRadius = 30;
+      const radius = minRadius + (maxRadius - minRadius) * (1 - score / 100);
+      node.x = centerX + Math.cos(angle) * radius;
+      node.y = centerY + Math.sin(angle) * radius;
+    });
+
     // Create simulation with radial forces
     setIsLoading(true);
     const simulation = d3.forceSimulation(filteredNodes as d3.SimulationNodeDatum[])
@@ -373,16 +528,27 @@ export default function NetworkPage() {
         .id((d: any) => d.id)
         .distance(80)
         .strength(0.3))
-      .force('charge', d3.forceManyBody().strength(-150))
+      .force('charge', d3.forceManyBody().strength(-300)) // Increased from -150 to spread nodes more
       .force('radial', d3.forceRadial((d: any) => {
         const entity = entities.find(e => e.id === d.id);
         const score = entity?.decentralizationScore ?? getDefaultScore(d.type);
         // Higher score = closer to center
         const maxRadius = 350;
         const minRadius = 30;
+
+        // Special case: Bitcoin gets a small radius (70px) to avoid being inside hostile region hulls
+        if (d.id === 'bitcoin-protocol') {
+          return 70;
+        }
+
         return minRadius + (maxRadius - minRadius) * (1 - score / 100);
       }, centerX, centerY).strength(0.8))
+      // Add weak X/Y forces to improve angular distribution
+      .force('x', d3.forceX(centerX).strength(0.05))
+      .force('y', d3.forceY(centerY).strength(0.05))
       .force('collision', d3.forceCollide().radius((d: any) => {
+        // Bitcoin Protocol has larger collision radius
+        if (d.id === 'bitcoin-protocol') return 33;
         const entity = entities.find(e => e.id === d.id);
         return entity ? getNodeSize(entity) + 5 : 20;
       }))
@@ -397,31 +563,50 @@ export default function NetworkPage() {
     });
     const loadingTimeout = setTimeout(() => setIsLoading(false), 2000);
 
-    // Create links with FORCE DIRECTION colors (not edge type colors)
-    const link = g.append('g')
+    // Create links container
+    const linksGroup = g.append('g').attr('class', 'links');
+
+    // Create invisible wider hit areas for easier clicking
+    const linkHitAreas = linksGroup.append('g')
       .selectAll('line')
       .data(filteredLinks)
       .join('line')
-      .attr('stroke', (d: any) => {
-        const force = getForceDirection(d.source as string || d.source.id, d.target as string || d.target.id);
-        return FORCE_COLORS[force];
-      })
-      .attr('stroke-opacity', 0.6)
-      .attr('stroke-width', (d: any) => {
-        // Thicker lines for connections between centralized entities
-        const force = getForceDirection(d.source as string || d.source.id, d.target as string || d.target.id);
-        if (force === 'centralizing') return 3 + (d.strength || 0.5) * 2;
-        if (force === 'decentralizing') return 1.5 + (d.strength || 0.5);
-        return 2 + (d.strength || 0.5);
+      .attr('stroke', 'transparent')
+      .attr('stroke-width', 15)
+      .attr('cursor', 'pointer')
+      .on('click', function(event, d: any) {
+        event.stopPropagation();
+        const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
+        const targetId = typeof d.target === 'string' ? d.target : d.target.id;
+        setSelectedEdge({
+          sourceId,
+          targetId,
+          relationship: d.relationship,
+          explanation: d.explanation,
+          edgeType: d.edgeType,
+        });
+        setEdgeTooltipData(null);
       })
       .on('mouseover', function(event, d: any) {
-        d3.select(this)
-          .attr('stroke-opacity', 1)
-          .attr('stroke-width', parseFloat(d3.select(this).attr('stroke-width')) + 2);
-
         const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
         const targetId = typeof d.target === 'string' ? d.target : d.target.id;
         const force = getForceDirection(sourceId, targetId);
+
+        // Highlight the visible link
+        linksGroup.selectAll('line.visible-link')
+          .filter((ld: any) => {
+            const lsId = typeof ld.source === 'string' ? ld.source : ld.source.id;
+            const ltId = typeof ld.target === 'string' ? ld.target : ld.target.id;
+            return (lsId === sourceId && ltId === targetId) || (lsId === targetId && ltId === sourceId);
+          })
+          .attr('stroke-opacity', 1)
+          .attr('stroke-width', (ld: any) => {
+            const f = getForceDirection(
+              typeof ld.source === 'string' ? ld.source : ld.source.id,
+              typeof ld.target === 'string' ? ld.target : ld.target.id
+            );
+            return (f === 'centralizing' ? 3 + (ld.strength || 0.5) * 2 : f === 'decentralizing' ? 1.5 + (ld.strength || 0.5) : 2 + (ld.strength || 0.5)) + 2;
+          });
 
         setEdgeTooltipData({
           x: event.pageX,
@@ -436,18 +621,51 @@ export default function NetworkPage() {
         setEdgeTooltipData(prev => prev ? { ...prev, x: event.pageX, y: event.pageY } : null);
       })
       .on('mouseout', function(event, d: any) {
-        const force = getForceDirection(
-          typeof d.source === 'string' ? d.source : d.source.id,
-          typeof d.target === 'string' ? d.target : d.target.id
-        );
-        d3.select(this)
-          .attr('stroke-opacity', 0.6)
-          .attr('stroke-width', force === 'centralizing' ? 3 + (d.strength || 0.5) * 2 : force === 'decentralizing' ? 1.5 + (d.strength || 0.5) : 2 + (d.strength || 0.5));
+        const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
+        const targetId = typeof d.target === 'string' ? d.target : d.target.id;
+
+        // Reset visible link style
+        linksGroup.selectAll('line.visible-link')
+          .filter((ld: any) => {
+            const lsId = typeof ld.source === 'string' ? ld.source : ld.source.id;
+            const ltId = typeof ld.target === 'string' ? ld.target : ld.target.id;
+            return (lsId === sourceId && ltId === targetId) || (lsId === targetId && ltId === sourceId);
+          })
+          .attr('stroke-opacity', 0.1)
+          .attr('stroke-width', (ld: any) => {
+            const f = getForceDirection(
+              typeof ld.source === 'string' ? ld.source : ld.source.id,
+              typeof ld.target === 'string' ? ld.target : ld.target.id
+            );
+            return f === 'centralizing' ? 3 + (ld.strength || 0.5) * 2 : f === 'decentralizing' ? 1.5 + (ld.strength || 0.5) : 2 + (ld.strength || 0.5);
+          });
+
         setEdgeTooltipData(null);
       });
 
-    // Create node groups
-    const node = g.append('g')
+    // Create visible links with FORCE DIRECTION colors (not edge type colors)
+    const link = linksGroup.append('g')
+      .selectAll('line')
+      .data(filteredLinks)
+      .join('line')
+      .attr('class', 'visible-link')
+      .attr('stroke', (d: any) => {
+        const force = getForceDirection(d.source as string || d.source.id, d.target as string || d.target.id);
+        return FORCE_COLORS[force];
+      })
+      .attr('stroke-opacity', 0.1)
+      .attr('stroke-width', (d: any) => {
+        // Thicker lines for connections between centralized entities
+        const force = getForceDirection(d.source as string || d.source.id, d.target as string || d.target.id);
+        if (force === 'centralizing') return 3 + (d.strength || 0.5) * 2;
+        if (force === 'decentralizing') return 1.5 + (d.strength || 0.5);
+        return 2 + (d.strength || 0.5);
+      })
+      .style('pointer-events', 'none'); // Let hit areas handle events
+
+    // Create node groups with a wrapper for z-order control
+    const nodesGroup = g.append('g').attr('class', 'nodes');
+    const node = nodesGroup
       .selectAll('g')
       .data(filteredNodes)
       .join('g')
@@ -455,8 +673,11 @@ export default function NetworkPage() {
       .call(d3.drag<SVGGElement, any>()
         .on('start', (event, d) => {
           if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
+          // Prevent dragging Bitcoin - it should stay at its radial force position
+          if (d.id !== 'bitcoin-protocol') {
+            d.fx = d.x;
+            d.fy = d.y;
+          }
         })
         .on('drag', (event, d) => {
           // Prevent dragging Bitcoin Protocol
@@ -466,20 +687,22 @@ export default function NetworkPage() {
         })
         .on('end', (event, d) => {
           if (!event.active) simulation.alphaTarget(0);
-          // Keep Bitcoin Protocol pinned
-          if (d.id !== 'bitcoin-protocol') {
-            d.fx = null;
-            d.fy = null;
-          }
+          // Release drag constraints (Bitcoin never had them set)
+          d.fx = null;
+          d.fy = null;
         }));
 
     // Add circles to nodes - colored by DECENTRALIZATION SCORE (red=threat, green=ally)
     node.append('circle')
       .attr('r', (d: any) => {
+        // Bitcoin Protocol gets larger size
+        if (d.id === 'bitcoin-protocol') return 28;
         const entity = entities.find(e => e.id === d.id);
         return entity ? getNodeSize(entity) : 12;
       })
       .attr('fill', (d: any) => {
+        // Bitcoin Protocol is 100% green
+        if (d.id === 'bitcoin-protocol') return '#22c55e';
         const entity = entities.find(e => e.id === d.id);
         if (entity) {
           return getNodeColor(entity);
@@ -509,10 +732,40 @@ export default function NetworkPage() {
         }
       })
       .on('mouseover', function(event, d: any) {
-        d3.select(this)
+        const currentNode = d3.select(this);
+        currentNode
           .attr('stroke', '#fff')
           .attr('stroke-width', 3)
           .style('filter', 'drop-shadow(0 0 8px rgba(255,255,255,0.5))');
+
+        // Highlight connected edges
+        linksGroup.selectAll('line.visible-link')
+          .transition()
+          .duration(200)
+          .attr('stroke-opacity', (ld: any) => {
+            const sourceId = typeof ld.source === 'string' ? ld.source : ld.source.id;
+            const targetId = typeof ld.target === 'string' ? ld.target : ld.target.id;
+            return (sourceId === d.id || targetId === d.id) ? 0.8 : 0.05;
+          });
+
+        // Highlight connected nodes
+        const connectedNodeIds = new Set<string>();
+        filteredLinks.forEach((link: any) => {
+          const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+          const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+          if (sourceId === d.id) connectedNodeIds.add(targetId);
+          if (targetId === d.id) connectedNodeIds.add(sourceId);
+        });
+
+        node.selectAll('circle')
+          .transition()
+          .duration(200)
+          .attr('opacity', (nd: any) => nd.id === d.id || connectedNodeIds.has(nd.id) ? 1 : 0.3);
+
+        node.selectAll('text')
+          .transition()
+          .duration(200)
+          .attr('opacity', (nd: any) => nd.id === d.id || connectedNodeIds.has(nd.id) ? 1 : 0.3);
 
         const entity = entities.find(e => e.id === d.id);
         if (entity) {
@@ -531,6 +784,24 @@ export default function NetworkPage() {
           .attr('stroke', d.id === 'bitcoin-protocol' ? '#f59e0b' : '#1a1a24')
           .attr('stroke-width', d.id === 'bitcoin-protocol' ? 4 : 2)
           .style('filter', 'none');
+
+        // Reset all edges
+        linksGroup.selectAll('line.visible-link')
+          .transition()
+          .duration(200)
+          .attr('stroke-opacity', 0.1);
+
+        // Reset all nodes
+        node.selectAll('circle')
+          .transition()
+          .duration(200)
+          .attr('opacity', 1);
+
+        node.selectAll('text')
+          .transition()
+          .duration(200)
+          .attr('opacity', 1);
+
         setTooltipData(null);
       })
       .on('dblclick', (event, d: any) => {
@@ -546,15 +817,20 @@ export default function NetworkPage() {
       .text((d: any) => d.name)
       .attr('x', 0)
       .attr('y', (d: any) => {
+        // Bitcoin Protocol has larger node size
+        if (d.id === 'bitcoin-protocol') return -36;
         const entity = entities.find(e => e.id === d.id);
         const size = entity ? getNodeSize(entity) : 12;
         return -(size + 4);
       })
       .attr('text-anchor', 'middle')
-      .attr('fill', '#a0a0a0')
-      .attr('font-size', '10px')
+      .attr('fill', (d: any) => d.id === 'bitcoin-protocol' ? '#22c55e' : '#a0a0a0')
+      .attr('font-size', (d: any) => d.id === 'bitcoin-protocol' ? '14px' : '10px')
       .attr('font-weight', (d: any) => d.id === 'bitcoin-protocol' ? 'bold' : 'normal')
       .style('pointer-events', 'none');
+
+    // Raise nodes to top of z-order for pointer events - nodes have priority over regions
+    nodesGroup.raise();
 
     // Update positions on tick
     simulation.on('tick', () => {
@@ -564,7 +840,71 @@ export default function NetworkPage() {
         .attr('x2', (d: any) => d.target.x)
         .attr('y2', (d: any) => d.target.y);
 
+      linkHitAreas
+        .attr('x1', (d: any) => d.source.x)
+        .attr('y1', (d: any) => d.source.y)
+        .attr('x2', (d: any) => d.target.x)
+        .attr('y2', (d: any) => d.target.y);
+
       node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+
+      // Update region hulls
+      regions.each(function(regionDatum: any) {
+        const region = d3.select(this);
+        const memberPositions: [number, number][] = [];
+
+        regionDatum.memberIds.forEach((memberId: string) => {
+          const memberNode = filteredNodes.find((n: any) => n.id === memberId);
+          if (memberNode && (memberNode as any).x !== undefined && (memberNode as any).y !== undefined) {
+            memberPositions.push([(memberNode as any).x, (memberNode as any).y]);
+          }
+        });
+
+        if (memberPositions.length >= 3) {
+          const hull = d3.polygonHull(memberPositions);
+          if (hull) {
+            // Bitcoin is now positioned at radius 70px to stay outside hostile region hulls
+            const expansionPadding = 50;
+
+            const expandedHull = expandPolygon(hull, expansionPadding);
+            const lineGenerator = d3.line<[number, number]>()
+              .x(d => d[0])
+              .y(d => d[1])
+              .curve(d3.curveCardinalClosed.tension(0.75));
+
+            region.select('.region-hull').attr('d', lineGenerator(expandedHull));
+
+            // Calculate centroid for label
+            const centroid = memberPositions.reduce(
+              (acc, p) => [acc[0] + p[0] / memberPositions.length, acc[1] + p[1] / memberPositions.length],
+              [0, 0]
+            );
+            region.select('.region-label').attr('x', centroid[0]).attr('y', centroid[1] - 12);
+            region.select('.region-score').attr('x', centroid[0]).attr('y', centroid[1] + 6);
+          }
+        } else if (memberPositions.length > 0) {
+          // For fewer than 3 points, draw a circle
+          const centroid = memberPositions.reduce(
+            (acc, p) => [acc[0] + p[0] / memberPositions.length, acc[1] + p[1] / memberPositions.length],
+            [0, 0]
+          );
+          // Create a circular path
+          const r = 70;
+          const circlePoints: [number, number][] = [];
+          for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            circlePoints.push([centroid[0] + r * Math.cos(angle), centroid[1] + r * Math.sin(angle)]);
+          }
+          const lineGenerator = d3.line<[number, number]>()
+            .x(d => d[0])
+            .y(d => d[1])
+            .curve(d3.curveCardinalClosed.tension(0.75));
+
+          region.select('.region-hull').attr('d', lineGenerator(circlePoints));
+          region.select('.region-label').attr('x', centroid[0]).attr('y', centroid[1] - 12);
+          region.select('.region-score').attr('x', centroid[0]).attr('y', centroid[1] + 6);
+        }
+      });
     });
 
     // Initial zoom to show ~3 rings with Bitcoin centered
@@ -594,9 +934,10 @@ export default function NetworkPage() {
 
       const pathNodeIds = new Set(currentPath.path);
 
-      svg.selectAll('line')
+      svg.selectAll('line.visible-link')
         .transition()
         .duration(300)
+        .ease(d3.easeCubicInOut)
         .attr('stroke-opacity', (d: any) => {
           const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
           const targetId = typeof d.target === 'string' ? d.target : d.target.id;
@@ -613,21 +954,45 @@ export default function NetworkPage() {
       svg.selectAll('circle')
         .transition()
         .duration(300)
+        .ease(d3.easeCubicInOut)
         .attr('opacity', (d: any) => pathNodeIds.has(d.id) ? 1 : 0.05);
 
       svg.selectAll('text')
         .transition()
         .duration(300)
+        .ease(d3.easeCubicInOut)
         .attr('opacity', (d: any) => pathNodeIds.has(d.id) ? 1 : 0.05);
 
+      // Dim regions during path view
+      svg.selectAll('.region')
+        .transition()
+        .duration(300)
+        .ease(d3.easeCubicInOut)
+        .attr('opacity', 0.2);
+
     } else {
-      svg.selectAll('line')
-        .attr('stroke-opacity', 0.6);
+      svg.selectAll('line.visible-link')
+        .transition()
+        .duration(300)
+        .ease(d3.easeCubicInOut)
+        .attr('stroke-opacity', 0.1);
 
       svg.selectAll('circle')
+        .transition()
+        .duration(300)
+        .ease(d3.easeCubicInOut)
         .attr('opacity', 1);
 
       svg.selectAll('text')
+        .transition()
+        .duration(300)
+        .ease(d3.easeCubicInOut)
+        .attr('opacity', 1);
+
+      svg.selectAll('.region')
+        .transition()
+        .duration(300)
+        .ease(d3.easeCubicInOut)
         .attr('opacity', 1);
     }
   }, [currentPath]);
@@ -647,37 +1012,56 @@ export default function NetworkPage() {
 
       svg.selectAll('circle')
         .transition()
-        .duration(200)
-        .attr('opacity', (d: any) => connectedIds.has(d.id) ? 1 : 0.15);
+        .duration(300)
+        .ease(d3.easeCubicInOut)
+        .attr('opacity', (d: any) => connectedIds.has(d.id) ? 1 : 0.12);
 
       svg.selectAll('text')
         .transition()
-        .duration(200)
-        .attr('opacity', (d: any) => connectedIds.has(d.id) ? 1 : 0.15);
+        .duration(300)
+        .ease(d3.easeCubicInOut)
+        .attr('opacity', (d: any) => connectedIds.has(d.id) ? 1 : 0.12);
 
-      svg.selectAll('line')
+      svg.selectAll('line.visible-link')
         .transition()
-        .duration(200)
+        .duration(300)
+        .ease(d3.easeCubicInOut)
         .attr('stroke-opacity', (d: any) => {
           const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
           const targetId = typeof d.target === 'string' ? d.target : d.target.id;
           return (sourceId === highlightedNode || targetId === highlightedNode) ? 1 : 0.05;
         });
+
+      // Dim concept regions too
+      svg.selectAll('.region')
+        .transition()
+        .duration(300)
+        .ease(d3.easeCubicInOut)
+        .attr('opacity', 0.3);
     } else {
       svg.selectAll('circle')
         .transition()
-        .duration(200)
+        .duration(300)
+        .ease(d3.easeCubicInOut)
         .attr('opacity', 1);
 
       svg.selectAll('text')
         .transition()
-        .duration(200)
+        .duration(300)
+        .ease(d3.easeCubicInOut)
         .attr('opacity', 1);
 
-      svg.selectAll('line')
+      svg.selectAll('line.visible-link')
         .transition()
-        .duration(200)
-        .attr('stroke-opacity', 0.6);
+        .duration(300)
+        .ease(d3.easeCubicInOut)
+        .attr('stroke-opacity', 0.1);
+
+      svg.selectAll('.region')
+        .transition()
+        .duration(300)
+        .ease(d3.easeCubicInOut)
+        .attr('opacity', 1);
     }
   }, [highlightedNode, currentPath]);
 
@@ -1095,27 +1479,37 @@ export default function NetworkPage() {
               {selectedEntity.name}
             </h3>
 
-            {/* Decentralization Score */}
-            <div className="flex items-center gap-3 mb-3 p-2 rounded-lg bg-[var(--bg-tertiary)]">
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold"
-                style={{
-                  backgroundColor: getDecentralizationColor(selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type)) + '30',
-                  color: getDecentralizationColor(selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type))
-                }}
-              >
-                {selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type)}
+            {/* Score Breakdown or Simple Score */}
+            {selectedEntity.scoreBreakdown ? (
+              <div className="mb-3 p-3 rounded-lg bg-[var(--bg-tertiary)]">
+                <ScoreBreakdown
+                  breakdown={selectedEntity.scoreBreakdown}
+                  overall={selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type)}
+                  compact
+                />
               </div>
-              <div className="flex-1">
-                <div className="text-xs text-[var(--text-muted)]">Decentralization Score</div>
+            ) : (
+              <div className="flex items-center gap-3 mb-3 p-2 rounded-lg bg-[var(--bg-tertiary)]">
                 <div
-                  className="text-sm font-medium"
-                  style={{ color: getDecentralizationColor(selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type)) }}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold"
+                  style={{
+                    backgroundColor: getDecentralizationColor(selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type)) + '30',
+                    color: getDecentralizationColor(selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type))
+                  }}
                 >
-                  {getDecentralizationLabel(selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type))}
+                  {selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type)}
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-[var(--text-muted)]">Decentralization Score</div>
+                  <div
+                    className="text-sm font-medium"
+                    style={{ color: getDecentralizationColor(selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type)) }}
+                  >
+                    {getDecentralizationLabel(selectedEntity.decentralizationScore ?? getDefaultScore(selectedEntity.type))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Force Analysis - NEW */}
             {selectedForceAnalysis && (
@@ -1154,6 +1548,20 @@ export default function NetworkPage() {
             <p className="text-sm text-[var(--text-secondary)] mb-4">
               {selectedEntity.description}
             </p>
+
+            {/* Path to Center */}
+            {selectedEntity.id !== 'bitcoin-protocol' && (
+              <div className="mb-4">
+                <PathToCenter
+                  entityId={selectedEntity.id}
+                  onNavigateToEntity={(entityId) => {
+                    setSelectedNode(entityId);
+                    setHighlightedNode(entityId);
+                  }}
+                  compact
+                />
+              </div>
+            )}
 
             <div>
               <h4 className="text-xs text-[var(--text-muted)] uppercase mb-2">
@@ -1209,9 +1617,31 @@ export default function NetworkPage() {
           entities={entities}
         />
 
+        {/* Edge Detail Panel */}
+        {selectedEdge && (() => {
+          const sourceEntity = entities.find(e => e.id === selectedEdge.sourceId);
+          const targetEntity = entities.find(e => e.id === selectedEdge.targetId);
+          if (!sourceEntity || !targetEntity) return null;
+          return (
+            <EdgeDetailPanel
+              sourceEntity={sourceEntity}
+              targetEntity={targetEntity}
+              relationship={selectedEdge.relationship}
+              explanation={selectedEdge.explanation}
+              edgeType={selectedEdge.edgeType}
+              onClose={() => setSelectedEdge(null)}
+              onNavigateToEntity={(entityId) => {
+                setSelectedEdge(null);
+                const entity = entities.find(e => e.id === entityId);
+                if (entity) setModalEntity(entity);
+              }}
+            />
+          );
+        })()}
+
         {/* Instructions */}
         <div className="absolute bottom-4 right-4 text-xs text-[var(--text-muted)] bg-[var(--bg-primary)]/80 px-3 py-1.5 rounded-lg backdrop-blur-sm">
-          Drag to pan • Scroll to zoom • Click for details • Double-click for full info
+          Drag to pan • Scroll to zoom • Click edges/nodes • Double-click for full info
         </div>
       </div>
 

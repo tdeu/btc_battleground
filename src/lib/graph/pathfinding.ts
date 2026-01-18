@@ -5,7 +5,8 @@
  * between two entities in the network graph.
  */
 
-import type { GraphData, GraphLink, EdgeType } from '@/types';
+import type { GraphData, GraphLink, EdgeType, Entity } from '@/types';
+import { generateHopExplanation, calculateTrustDistance } from '@/lib/explanations';
 
 export interface PathResult {
   path: string[];           // Array of entity IDs from start to end
@@ -19,6 +20,23 @@ export interface PathEdge {
   target: string;
   relationship: string;
   edgeType: EdgeType;
+  explanation?: string;
+}
+
+export interface HopExplanation {
+  from: string;
+  to: string;
+  fromName: string;
+  toName: string;
+  relationship: string;
+  edgeType: EdgeType;
+  explanation: string;
+}
+
+export interface PathToCenterResult extends PathResult {
+  hopExplanations: HopExplanation[];
+  narrative: string;
+  trustDistance: number;
 }
 
 interface AdjacencyEntry {
@@ -242,4 +260,91 @@ export function findEntitiesWithinDegrees(
   }
 
   return distances;
+}
+
+/**
+ * Find the path from an entity to the center (Bitcoin Protocol by default)
+ * with full-sentence explanations for each hop
+ */
+export function findPathToCenter(
+  graphData: GraphData,
+  startId: string,
+  entities: Entity[],
+  centerId: string = 'bitcoin-protocol'
+): PathToCenterResult {
+  const result = findShortestPath(graphData, startId, centerId);
+
+  if (!result.found) {
+    return {
+      ...result,
+      hopExplanations: [],
+      narrative: `No path found from this entity to ${centerId}.`,
+      trustDistance: 0,
+    };
+  }
+
+  // Get entity objects for the path
+  const pathEntities = result.path.map(id => entities.find(e => e.id === id)).filter(Boolean) as Entity[];
+
+  // Generate hop explanations
+  const hopExplanations: HopExplanation[] = result.edges.map((edge, i) => {
+    const fromEntity = entities.find(e => e.id === edge.source);
+    const toEntity = entities.find(e => e.id === edge.target);
+
+    if (!fromEntity || !toEntity) {
+      return {
+        from: edge.source,
+        to: edge.target,
+        fromName: edge.source,
+        toName: edge.target,
+        relationship: edge.relationship,
+        edgeType: edge.edgeType,
+        explanation: `${edge.source} connects to ${edge.target} via ${edge.relationship}.`,
+      };
+    }
+
+    return {
+      from: edge.source,
+      to: edge.target,
+      fromName: fromEntity.name,
+      toName: toEntity.name,
+      relationship: edge.relationship,
+      edgeType: edge.edgeType,
+      explanation: generateHopExplanation(fromEntity, toEntity, edge.relationship, edge.edgeType),
+    };
+  });
+
+  // Calculate trust distance
+  const trustDistance = calculateTrustDistance(pathEntities);
+
+  // Generate narrative
+  const startEntity = entities.find(e => e.id === startId);
+  const centerEntity = entities.find(e => e.id === centerId);
+  const startName = startEntity?.name || startId;
+  const centerName = centerEntity?.name || centerId;
+
+  let narrative = `${startName} is ${result.distance} hop${result.distance > 1 ? 's' : ''} away from ${centerName}. `;
+
+  if (result.distance === 1) {
+    narrative += `There is a direct connection between them.`;
+  } else {
+    const intermediates = pathEntities.slice(1, -1).map(e => e.name);
+    narrative += `The path goes through ${intermediates.join(' → ')}.`;
+  }
+
+  // Add trust assessment
+  if (trustDistance > 70) {
+    narrative += ` This path passes through highly centralized entities, representing significant trust requirements.`;
+  } else if (trustDistance > 40) {
+    narrative += ` This path involves moderate centralization.`;
+  } else {
+    narrative += ` This path is relatively decentralized.`;
+  }
+
+  return {
+    ...result,
+    hopExplanations,
+    narrative,
+    trustDistance,
+  };
 }

@@ -21,6 +21,8 @@ import { EDGE_COLORS, EDGE_LABELS } from '@/lib/data';
 import { classifyEdgeType } from '@/data/entities';
 import type { Entity, EntityType, ThreatLevel } from '@/types';
 import NewsFeed from './NewsFeed';
+import ScoreBreakdown from './ScoreBreakdown';
+import PathToCenter from './PathToCenter';
 
 const typeColors: Record<EntityType, string> = {
   person: '#22c55e',
@@ -182,6 +184,22 @@ export default function EntityDetailModal({
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
+              {/* Score Breakdown */}
+              {entity.scoreBreakdown && (
+                <ScoreBreakdown
+                  breakdown={entity.scoreBreakdown}
+                  overall={entity.decentralizationScore}
+                />
+              )}
+
+              {/* Path to Center */}
+              {entity.id !== 'bitcoin-protocol' && (
+                <PathToCenter
+                  entityId={entity.id}
+                  onNavigateToEntity={onNavigateToEntity}
+                />
+              )}
+
               {/* Capture Story - Why This Matters */}
               {entity.captureStory && (
                 <div className="p-4 rounded-lg bg-[var(--bg-tertiary)] border-l-4 border-[var(--accent)]">
@@ -219,24 +237,39 @@ export default function EntityDetailModal({
                     value={metadata.regulatoryStatus}
                   />
 
-                  {/* Key People */}
+                  {/* Key People - Prominent display since persons removed from graph */}
                   {metadata.keyPeople && metadata.keyPeople.length > 0 && (
-                    <div className="col-span-full mt-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Users size={16} className="text-[var(--text-muted)]" />
-                        <span className="text-xs text-[var(--text-muted)]">Key People</span>
+                    <div className="col-span-full mt-4 p-4 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)]">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Users size={18} className="text-[var(--accent)]" />
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">Key People</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-muted)]">
+                          {metadata.keyPeople.length}
+                        </span>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {metadata.keyPeople.map((person, i) => (
                           <div
                             key={i}
-                            className="px-3 py-1.5 rounded-lg bg-[var(--bg-tertiary)] text-sm"
+                            className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--border)] transition-colors"
                           >
-                            <span className="text-[var(--text-primary)]">{person.name}</span>
-                            <span className="text-[var(--text-muted)]"> · {person.role}</span>
+                            <div className="w-10 h-10 rounded-full bg-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] font-bold">
+                              {person.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-[var(--text-primary)] truncate">
+                                {person.name}
+                              </div>
+                              <div className="text-xs text-[var(--text-muted)] truncate">
+                                {person.role}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
+                      <p className="text-xs text-[var(--text-muted)] mt-3 italic">
+                        These individuals hold significant influence over {entity.name}{"'"}s operations and strategy.
+                      </p>
                     </div>
                   )}
 
